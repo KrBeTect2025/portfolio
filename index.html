@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- TODO(you): replace YOUR NAME everywhere in this file (search for "YOUR NAME"). -->
+  <title>YOUR NAME | Backend and ML developer</title>
+  <meta name="description" content="Portfolio of YOUR NAME: backend APIs with FastAPI, document parsing, and tested Python.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Newsreader:ital,opsz,wght@1,6..72,500&family=Public+Sans:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#projects">Skip to projects</a>
+
+  <!-- A moving strip of real facts. Decoration only, so screen readers skip it. -->
+  <div class="ticker" aria-hidden="true" data-loud>
+    <div class="ticker__track">
+      <span>52 tests passing</span><span>FastAPI</span><span>PDF tables rebuilt from word positions</span><span>Redis cache-aside</span><span>Results deleted after 24 h</span><span>Type help in the terminal</span>
+      <span>52 tests passing</span><span>FastAPI</span><span>PDF tables rebuilt from word positions</span><span>Redis cache-aside</span><span>Results deleted after 24 h</span><span>Type help in the terminal</span>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- LEFT COLUMN: who you are and how to reach you. Stays in view on wide screens. -->
+    <aside class="side">
+      <div class="side__inner">
+        <p class="hello">Hello, I am</p>
+        <h1 class="name" id="name"><span>YOUR</span> <span>NAME</span></h1>
+        <p class="role">
+          Backend and ML developer. I build <em>APIs that turn messy documents into data you can check.</em>
+        </p>
+
+        <nav aria-label="Sections">
+          <ul class="nav">
+            <li><a href="#projects">Projects</a></li>
+            <li><a href="#terminal">Terminal</a></li>
+            <li><a href="#skills">Skills</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+        </nav>
+
+        <p class="side__links">
+          <a class="btn btn--hot" href="#contact">Get in touch</a>
+          <a class="btn" href="https://github.com/KrBeTect2025" rel="noopener">GitHub</a>
+          <!-- TODO(you): add resume.pdf to this folder, then uncomment the line below.
+          <a class="btn" href="resume.pdf">Resume</a> -->
+        </p>
+
+        <div class="side__game">
+          <button type="button" class="secrets" id="secretsBtn" aria-controls="terminal">
+            Found <b id="secretCount">0</b> of <b id="secretTotal">5</b> secrets
+          </button>
+          <button type="button" class="mode" id="modeToggle" aria-pressed="false">Plain mode: off</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT COLUMN: the work. -->
+    <main id="main">
+      <section id="projects" class="section">
+        <h2 class="section__title">Selected work</h2>
+
+        <article class="project project--feature">
+          <span class="sticker sticker--sun" data-loud aria-hidden="true">52 tests<br>passing</span>
+          <p class="project__kicker">Headline project</p>
+          <h3>lab-report-explainer</h3>
+          <p>
+            Reads a lab report PDF, rebuilds the table of test results from the position of each
+            word on the page, and marks every result low, normal or high using plain code, not an
+            AI guess. A FastAPI service handles upload, lets a person review uncertain rows, and
+            deletes the result after 24 hours.
+          </p>
+          <dl class="stats">
+            <div><dt>Tests</dt><dd>52 passing</dd></div>
+            <div><dt>Stack</dt><dd>Python, FastAPI, PDF parsing</dd></div>
+            <div><dt>Privacy</dt><dd>PDF deleted after reading; results expire in 24 h</dd></div>
+            <div><dt>Status</dt><dd>Extraction works; plain-language explanations not built yet</dd></div>
+          </dl>
+          <details class="more" id="loreDetails">
+            <summary>Bugs I fixed, each with a test</summary>
+            <ul>
+              <li>A watermark leaking letters into numeric results</li>
+              <li>A "Method" column merging into the reference range</li>
+              <li>A symbol font being read as garbage characters</li>
+            </ul>
+            <p class="note">
+              Known limits: tested on 4 public sample reports from 3 labs. Accuracy against
+              hand-checked answers has not been measured yet.
+            </p>
+          </details>
+          <p class="links"><a href="https://github.com/KrBeTect2025/lab-report-explainer" rel="noopener">Source code</a></p>
+        </article>
+
+        <div class="project-row">
+          <article class="project">
+            <span class="sticker sticker--mint" data-loud aria-hidden="true">live</span>
+            <p class="project__kicker">Front end</p>
+            <h3>RescueSync</h3>
+            <p>
+              A disaster-management dashboard: 12 pages with maps, charts, alerts and
+              multi-language support, backed by a small Express API. Deployed front and back.
+            </p>
+            <dl class="stats">
+              <div><dt>Stack</dt><dd>React, TypeScript, Express</dd></div>
+              <div><dt>Status</dt><dd>Demo only: no login, data stored in JSON files</dd></div>
+            </dl>
+            <p class="links">
+              <!-- TODO(you): check this live link still works before publishing. -->
+              <a href="https://rescue-sync-delta.vercel.app" rel="noopener">Live demo</a>
+              <a href="https://github.com/KrBeTect2025/RescueSync" rel="noopener">Source code</a>
+            </p>
+          </article>
+
+          <article class="project">
+            <p class="project__kicker">Backend</p>
+            <h3>urlshort</h3>
+            <p>
+              A URL shortener in FastAPI. Turns each database row id into a base-62 short code
+              and checks Redis before SQLite, filling the cache on a miss.
+            </p>
+            <dl class="stats">
+              <div><dt>Stack</dt><dd>Python, FastAPI, SQLite, Redis</dd></div>
+              <div><dt>Status</dt><dd>Small learning project</dd></div>
+            </dl>
+            <p class="links"><a href="https://github.com/KrBeTect2025/urlshort" rel="noopener">Source code</a></p>
+          </article>
+        </div>
+      </section>
+
+      <!-- TERMINAL: the one game element. Clickable suggestions mean nobody has to type. -->
+      <section id="terminal" class="section">
+        <h2 class="section__title">Ask the terminal</h2>
+        <p class="section__lede">It answers from this page. Type a command, or click one below.</p>
+        <div class="term" id="term">
+          <div class="term__bar"><i></i><i></i><i></i><span>guest@portfolio: ~</span></div>
+          <div class="term__out" id="termOut" role="log" aria-live="polite">
+            <noscript>The terminal needs JavaScript. Everything it shows is also on this page.</noscript>
+          </div>
+          <form class="term__line" id="termForm" autocomplete="off">
+            <label for="termInput">$</label>
+            <input id="termInput" type="text" spellcheck="false" autocapitalize="off" placeholder="type help">
+          </form>
+        </div>
+        <div class="chips" id="termChips">
+          <button type="button" data-cmd="help">help</button>
+          <button type="button" data-cmd="ls">ls</button>
+          <button type="button" data-cmd="cat lab-report-explainer">cat lab-report-explainer</button>
+          <button type="button" data-cmd="curl /api/projects">curl /api/projects</button>
+          <button type="button" data-cmd="secrets">secrets</button>
+        </div>
+      </section>
+
+      <section id="skills" class="section">
+        <h2 class="section__title">Tools I have used</h2>
+        <p class="section__lede">Only what appears in the projects above.</p>
+        <div class="skills">
+          <div class="skill-group"><h3>Languages</h3><ul><li>Python</li><li>TypeScript</li><li>JavaScript</li><li>SQL</li></ul></div>
+          <div class="skill-group"><h3>Backend</h3><ul><li>FastAPI</li><li>Express</li><li>SQLite</li><li>Redis</li></ul></div>
+          <div class="skill-group"><h3>Front end</h3><ul><li>React</li><li>HTML and CSS</li></ul></div>
+          <div class="skill-group"><h3>Practice</h3><ul><li>Automated testing</li><li>PDF parsing</li><li>Git and GitHub</li></ul></div>
+        </div>
+      </section>
+
+      <section id="about" class="section">
+        <h2 class="section__title">About</h2>
+        <!-- TODO(you): rewrite this in your own words. Two or three sentences is enough. -->
+        <p class="about">
+          I am a developer interested in serving ML and LLM features through my own APIs, with
+          code that checks every number before a person sees it. I like work where I can write a
+          test that proves a bug is fixed.
+        </p>
+      </section>
+
+      <section id="contact" class="section contact">
+        <h2 class="contact__big">Let's talk.</h2>
+        <!-- TODO(you): put your real email address in both places below. -->
+        <p class="contact__email"><a href="mailto:you@example.com">you@example.com</a></p>
+        <p class="side__links">
+          <a class="btn" href="https://github.com/KrBeTect2025" rel="noopener">GitHub</a>
+          <!-- TODO(you): add your LinkedIn URL or delete this line. -->
+          <a class="btn" href="https://www.linkedin.com/" rel="noopener">LinkedIn</a>
+        </p>
+      </section>
+
+      <footer class="footer">
+        Plain HTML, CSS and JavaScript. No framework, no tracking.
+      </footer>
+    </main>
+  </div>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <script src="script.js"></script>
+</body>
+</html>
