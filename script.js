@@ -18,9 +18,10 @@
 
   // ---------- Styles: poster, rockstar, plain ----------
   // Change DEFAULT_STYLE to pick what a first-time visitor sees.
-  var DEFAULT_STYLE = "rock";
-  var STYLES = { poster: "Poster", rock: "Rockstar", plain: "Plain" };
-  var ORDER = ["poster", "rock", "plain"];
+  var DEFAULT_STYLE = "mix";
+  var STYLES = { poster: "Poster", mix: "Encore", rock: "Rockstar", plain: "Plain" };
+  var ORDER = ["mix", "poster", "rock", "plain"];
+  var encore = $("encore");
   var modeBtn = $("modeToggle");
   var style = load("style", DEFAULT_STYLE);
   if (!STYLES[style]) style = DEFAULT_STYLE;
@@ -35,15 +36,30 @@
     plain = style === "plain";
     document.body.classList.toggle("plain", plain);
     document.body.classList.toggle("rock", style === "rock");
+    document.body.classList.toggle("mix", style === "mix");
+    encore.classList.toggle("rock", style === "mix");
+    measureSplit();
     // Drop any colour the Konami code set when leaving the poster style.
     if (style !== "poster") {
       document.body.style.removeProperty("--stage");
       document.body.style.removeProperty("--stage-dot");
     }
-    swaps.forEach(function (s) { s.el.textContent = style === "rock" ? s.rock : s.normal; });
+    swaps.forEach(function (s) {
+      var on = style === "rock" || (style === "mix" && encore.contains(s.el));
+      s.el.textContent = on ? s.rock : s.normal;
+    });
     modeBtn.textContent = "Style: " + STYLES[style];
     modeBtn.setAttribute("aria-label", "Style: " + STYLES[style] + ". Click to change.");
   }
+  // Encore: tell the CSS where the terminal ends, so the stage turns black there.
+  function measureSplit() {
+    var term = $("terminal");
+    var y = term.getBoundingClientRect().bottom + window.scrollY + 24;
+    document.body.style.setProperty("--split", Math.round(y) + "px");
+  }
+  window.addEventListener("resize", measureSplit);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measureSplit);
+
   function setStyle(next) { style = next; save("style", style); applyMode(); }
   modeBtn.addEventListener("click", function () {
     setStyle(ORDER[(ORDER.indexOf(style) + 1) % ORDER.length]);
@@ -166,7 +182,7 @@
         "skills               tools I have used",
         "contact              how to reach me",
         "secrets              what you have found so far",
-        "style <name>         poster, rock or plain",
+        "style <name>         encore, poster, rock or plain",
         "clear                clear the screen",
         "",
         "Tab completes commands and project names. Up and down repeat earlier commands."
@@ -221,7 +237,8 @@
     style: function (arg) {
       arg = (arg || "").toLowerCase();
       if (arg === "rockstar") arg = "rock";
-      if (!STYLES[arg]) return print("style: pick one of poster, rock, plain. Now: " + style, "err");
+      if (arg === "encore") arg = "mix";
+      if (!STYLES[arg]) return print("style: pick one of encore, poster, rock, plain. Now: " + STYLES[style], "err");
       setStyle(arg);
       print("Style is now " + STYLES[style] + ".");
     },

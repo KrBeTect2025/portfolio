@@ -249,10 +249,11 @@ body.plain .contact { background: var(--paper); color: var(--ink); }
 
 /* ============================================================
    Rockstar style: a gig poster. Black stage, red and gold ink,
-   flyers taped to the wall, chrome lettering. Switched on by the
-   "rock" class on <body>. Reading surfaces stay plain paper.
+   flyers taped to the wall, chrome lettering. Applies inside any
+   element with the "rock" class: <body> for the whole page, or just
+   the lower sections in the Encore style. Reading surfaces stay paper.
    ============================================================ */
-body.rock {
+.rock {
   --stage: #0d0b0b;
   --stage-dot: rgba(255, 255, 255, 0.035);
   --paper: #f3ede3;
@@ -266,6 +267,8 @@ body.rock {
   --display: "Anton", "Impact", "Arial Narrow", sans-serif;
   --shadow: 8px 8px 0 var(--hot);
   --shadow-sm: 5px 5px 0 var(--hot);
+}
+body.rock {
   /* Halftone dots plus a red spotlight from the top left. */
   background-image:
     radial-gradient(circle at 12% -10%, rgba(255, 43, 43, 0.35), transparent 45%),
@@ -274,82 +277,108 @@ body.rock {
 }
 
 /* Anton is a single heavy weight, so stop the browser faking bold. */
-body.rock h1, body.rock h2, body.rock h3, body.rock .btn, body.rock .skill-group ul { font-weight: 400; }
-body.rock .section__title { text-transform: uppercase; letter-spacing: 0.01em; font-size: clamp(44px, 6vw, 76px); }
-body.rock .section__title::after {
+.rock h1, .rock h2, .rock h3, .rock .btn, .rock .skill-group ul { font-weight: 400; }
+.rock .section__title { text-transform: uppercase; letter-spacing: 0.01em; font-size: clamp(44px, 6vw, 76px); }
+.rock .section__title::after {
   content: ""; display: block; width: 72px; height: 6px; margin-top: var(--s2); background: var(--hot);
 }
 
 /* Name: chrome letters with a red echo, dropped in once on load. */
-body.rock .hello { font: 400 30px "Permanent Marker", cursive; color: var(--sun); transform: rotate(-3deg); transform-origin: left; }
-body.rock .side__inner { overflow-x: clip; }
-body.rock .name { transform-origin: left center; font-size: clamp(76px, 11vw, 168px); line-height: 0.86; letter-spacing: 0; animation: slam 0.5s cubic-bezier(.2, 1.4, .4, 1) both; }
-body.rock .name span:first-child {
+.rock .hello { font: 400 30px "Permanent Marker", cursive; color: var(--sun); transform: rotate(-3deg); transform-origin: left; }
+.rock .side__inner { overflow-x: clip; }
+.rock .name { transform-origin: left center; font-size: clamp(76px, 11vw, 168px); line-height: 0.86; letter-spacing: 0; animation: slam 0.5s cubic-bezier(.2, 1.4, .4, 1) both; }
+.rock .name span:first-child {
   background: linear-gradient(180deg, #ffffff 0%, #c9c9c9 45%, #6f6f6f 52%, #e8e8e8 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
   filter: drop-shadow(5px 5px 0 var(--hot));
 }
-body.rock .name span:last-child { color: var(--hot); -webkit-text-stroke: 0; filter: drop-shadow(5px 5px 0 #000); }
-body.rock .name.party span:first-child { background: linear-gradient(180deg, #fff3b0, var(--sun) 50%, #b8860b 52%, #ffe680); -webkit-background-clip: text; background-clip: text; }
-body.rock .name.party span:last-child { color: var(--sun); }
+.rock .name span:last-child { color: var(--hot); -webkit-text-stroke: 0; filter: drop-shadow(5px 5px 0 #000); }
+.rock .name.party span:first-child { background: linear-gradient(180deg, #fff3b0, var(--sun) 50%, #b8860b 52%, #ffe680); -webkit-background-clip: text; background-clip: text; }
+.rock .name.party span:last-child { color: var(--sun); }
 @keyframes slam { from { transform: scale(1.25) rotate(-2deg); opacity: 0; } }
 
-body.rock .role em { color: var(--sun); }
-body.rock .nav a:hover { background: var(--hot); color: var(--paper); border-color: var(--hot); }
-body.rock .btn { letter-spacing: 0.04em; text-transform: uppercase; font-size: 19px; }
-body.rock .btn--hot { background: var(--hot); color: var(--paper); box-shadow: 5px 5px 0 var(--sun); }
-body.rock .secrets { background: var(--sun); }
+.rock .role em { color: var(--sun); }
+.rock .nav a:hover { background: var(--hot); color: var(--paper); border-color: var(--hot); }
+.rock .btn { letter-spacing: 0.04em; text-transform: uppercase; font-size: 19px; }
+.rock .btn--hot { background: var(--hot); color: var(--paper); box-shadow: 5px 5px 0 var(--sun); }
+.rock .secrets { background: var(--sun); }
 
 /* Ticker: a red tour banner. */
-body.rock .ticker { background: var(--hot); color: var(--ink); border-bottom-color: var(--hot); }
-body.rock .ticker span { font: 400 18px var(--display); letter-spacing: 0.06em; }
-body.rock .ticker span::after { content: "/"; color: var(--paper); }
+.rock .ticker { background: var(--hot); color: var(--ink); border-bottom-color: var(--hot); }
+.rock .ticker span { font: 400 18px var(--display); letter-spacing: 0.06em; }
+.rock .ticker span::after { content: "/"; color: var(--paper); }
 
 /* Projects: flyers taped to the wall, slightly crooked. */
-body.rock .project { border-radius: 2px; transform: rotate(-0.6deg); }
-body.rock .project-row .project:nth-child(1) { transform: rotate(0.9deg); }
-body.rock .project-row .project:nth-child(2) { transform: rotate(-1.2deg); }
-body.rock .project::after {
+.rock .project { border-radius: 2px; transform: rotate(-0.6deg); }
+.rock .project-row .project:nth-child(1) { transform: rotate(0.9deg); }
+.rock .project-row .project:nth-child(2) { transform: rotate(-1.2deg); }
+.rock .project::after {
   content: ""; position: absolute; top: -14px; left: 50%; width: 110px; height: 28px;
   transform: translateX(-50%) rotate(-3deg);
   background: rgba(255, 238, 190, 0.75); border-left: 2px dashed rgba(0,0,0,.12); border-right: 2px dashed rgba(0,0,0,.12);
 }
-body.rock .project h3 { text-transform: uppercase; letter-spacing: 0.01em; }
-body.rock .project__kicker { color: var(--hot); }
-body.rock .project--feature .project__kicker { font: 400 22px "Permanent Marker", cursive; text-transform: none; letter-spacing: 0; transform: rotate(-2deg); transform-origin: left; }
-body.rock .stats div { border-radius: 0; background: #fffaf2; }
+.rock .project h3 { text-transform: uppercase; letter-spacing: 0.01em; }
+.rock .project__kicker { color: var(--hot); }
+.rock .project--feature .project__kicker { font: 400 22px "Permanent Marker", cursive; text-transform: none; letter-spacing: 0; transform: rotate(-2deg); transform-origin: left; }
+.rock .stats div { border-radius: 0; background: #fffaf2; }
 
 /* Stickers become gold records and a red stamp. */
-body.rock .sticker { border-radius: 50%; width: 104px; height: 104px; display: grid; place-items: center; padding: 0; font: 400 17px/1.05 var(--display); box-shadow: 4px 4px 0 #000; top: -28px; z-index: 1; }
-body.rock .sticker--sun { background: radial-gradient(circle, #fff3b0 0 14%, var(--sun) 15% 60%, #b8860b 61% 64%, var(--sun) 65%); }
-body.rock .sticker--mint { width: auto; height: auto; border-radius: 4px; padding: var(--s2) var(--s3); background: var(--hot); color: var(--paper); font-size: 20px; transform: rotate(-8deg); }
+.rock .sticker { border-radius: 50%; width: 104px; height: 104px; display: grid; place-items: center; padding: 0; font: 400 17px/1.05 var(--display); box-shadow: 4px 4px 0 #000; top: -28px; z-index: 1; }
+.rock .sticker--sun { background: radial-gradient(circle, #fff3b0 0 14%, var(--sun) 15% 60%, #b8860b 61% 64%, var(--sun) 65%); }
+.rock .sticker--mint { width: auto; height: auto; border-radius: 4px; padding: var(--s2) var(--s3); background: var(--hot); color: var(--paper); font-size: 20px; transform: rotate(-8deg); }
 
 /* Terminal: the sound desk. */
-body.rock .term { border-radius: 4px; box-shadow: 8px 8px 0 var(--sun); }
-body.rock .term__bar { background: #1a1414; }
-body.rock .chips button { border-radius: 2px; }
-body.rock .chips button:hover { background: var(--hot); color: var(--paper); }
+.rock .term { border-radius: 4px; box-shadow: 8px 8px 0 var(--sun); }
+.rock .term__bar { background: #1a1414; }
+.rock .chips button { border-radius: 2px; }
+.rock .chips button:hover { background: var(--hot); color: var(--paper); }
 
 /* Gear: alternating red, gold, paper, black. */
-body.rock .skill-group { border-radius: 2px; }
-body.rock .skill-group:nth-child(1) { background: var(--paper); }
-body.rock .skill-group:nth-child(2) { background: var(--hot); color: var(--paper); }
-body.rock .skill-group:nth-child(3) { background: var(--sun); }
-body.rock .skill-group:nth-child(4) { background: #1c1717; color: var(--paper); border-color: var(--paper); }
-body.rock .skill-group ul { text-transform: uppercase; font-size: 24px; letter-spacing: 0.02em; }
+.rock .skill-group { border-radius: 2px; }
+.rock .skill-group:nth-child(1) { background: var(--paper); }
+.rock .skill-group:nth-child(2) { background: var(--hot); color: var(--paper); }
+.rock .skill-group:nth-child(3) { background: var(--sun); }
+.rock .skill-group:nth-child(4) { background: #1c1717; color: var(--paper); border-color: var(--paper); }
+.rock .skill-group ul { text-transform: uppercase; font-size: 24px; letter-spacing: 0.02em; }
 
 /* Liner notes and the booking poster. */
-body.rock .about { border-radius: 2px; transform: rotate(0.4deg); }
-body.rock .contact { background: var(--ink); color: var(--paper); border-color: var(--hot); border-radius: 2px; box-shadow: 8px 8px 0 var(--hot); }
-body.rock .contact__big { color: var(--hot); text-transform: uppercase; font-size: clamp(72px, 11vw, 150px); }
-body.rock .contact__email a { color: var(--sun); }
-body.rock .contact .btn { box-shadow: 5px 5px 0 var(--sun); }
-body.rock .toast { background: var(--hot); color: var(--paper); border-radius: 2px; box-shadow: 4px 4px 0 var(--sun); }
+.rock .about { border-radius: 2px; transform: rotate(0.4deg); }
+.rock .contact { background: var(--ink); color: var(--paper); border-color: var(--hot); border-radius: 2px; box-shadow: 8px 8px 0 var(--hot); }
+.rock .contact__big { color: var(--hot); text-transform: uppercase; font-size: clamp(72px, 11vw, 150px); }
+.rock .contact__email a { color: var(--sun); }
+.rock .contact .btn { box-shadow: 5px 5px 0 var(--sun); }
+.rock .toast { background: var(--hot); color: var(--paper); border-radius: 2px; box-shadow: 4px 4px 0 var(--sun); }
 
 @media (prefers-reduced-motion: reduce) {
-  body.rock .name { animation: none; }
+  .rock .name { animation: none; }
 }
 @media (max-width: 900px) {
-  body.rock .sticker { width: 84px; height: 84px; font-size: 14px; top: -24px; }
-  body.rock .project, body.rock .project-row .project { transform: none; }
+  .rock .sticker { width: 84px; height: 84px; font-size: 14px; top: -24px; }
+  .rock .project, .rock .project-row .project { transform: none; }
 }
+
+/* ============================================================
+   Encore style: Poster on top, Rockstar from the skills down.
+   script.js puts the "rock" class on .encore and sets --split to
+   where the terminal ends, so the stage fades from cobalt to black
+   right there, across the full page width.
+   ============================================================ */
+.encore { display: grid; gap: var(--s12); min-width: 0; }
+body.mix {
+  background-image:
+    linear-gradient(180deg, transparent 0, transparent calc(var(--split, 2000px) - 120px), #0d0b0b calc(var(--split, 2000px) + 80px)),
+    radial-gradient(circle at 75% var(--split, 2000px), rgba(255, 43, 43, 0.35), transparent 30%),
+    radial-gradient(var(--stage-dot) 2px, transparent 2.5px);
+  background-size: auto, auto, 22px 22px;
+}
+.encore__banner { display: none; }
+body.mix .encore__banner {
+  display: block; overflow: hidden; margin: calc(var(--s4) * -1) calc(var(--s6) * -1) 0;
+  background: #ff2b2b; color: #0d0b0b; border: 3px solid #0d0b0b; box-shadow: 6px 6px 0 #ffcc1f;
+  transform: rotate(-2deg);
+}
+.encore__banner div { display: flex; width: max-content; animation: ticker 30s linear infinite reverse; }
+.encore__banner span { font: 400 24px/1 "Anton", Impact, sans-serif; text-transform: uppercase; letter-spacing: 0.06em; padding: var(--s3) var(--s4); white-space: nowrap; }
+.encore__banner span::after { content: "/"; margin-left: var(--s8); color: #fffaf0; }
+@media (prefers-reduced-motion: reduce) { .encore__banner div { animation: none; } }
+@media (max-width: 900px) { body.mix .encore__banner { margin: 0 calc(var(--s2) * -1); } }
