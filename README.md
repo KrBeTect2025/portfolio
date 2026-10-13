@@ -21,9 +21,9 @@ The site appears at `https://krbetect2025.github.io/portfolio/`.
 
 ## How it is built
 
-- Four styles, switched with the "Style" button or the `style` terminal command:
-  Encore (Poster down to the terminal, Rockstar below it),
-  Poster (cobalt), Rockstar (gig poster) and Plain (calm, for conservative employers).
+- Three styles, switched with the "Style" button or the `style` terminal command:
+  Poster (cobalt, the default), Rockstar (gig poster) and Plain (calm, for conservative
+  employers). A hint at the bottom of the page lets visitors switch.
   `DEFAULT_STYLE` at the top of `script.js` picks what a first-time visitor sees.
 - `styles.css` defines every colour as a token at the top. Each style swaps those tokens;
   the Rockstar block at the bottom adds its own lettering, tape and stickers.
