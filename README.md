@@ -21,8 +21,12 @@ The site appears at `https://krbetect2025.github.io/portfolio/`.
 
 ## How it is built
 
-- `styles.css` defines every colour as a token at the top. "Plain mode" swaps those tokens
-  for calm ones and hides decorations marked `data-loud`.
+- Three styles, switched with the "Style" button or the `style` terminal command:
+  Poster (cobalt), Rockstar (gig poster) and Plain (calm, for conservative employers).
+  `DEFAULT_STYLE` at the top of `script.js` picks what a first-time visitor sees.
+- `styles.css` defines every colour as a token at the top. Each style swaps those tokens;
+  the Rockstar block at the bottom adds its own lettering, tape and stickers.
+- Headings with `data-rock="..."` show that text in the Rockstar style.
 - `script.js` holds the terminal and the secrets. The terminal reads projects from the HTML,
   so there is one place to edit content.
 - If JavaScript fails, the page still shows all content; only the terminal and secrets are lost.

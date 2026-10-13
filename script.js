@@ -16,20 +16,38 @@
   }
   function $(id) { return document.getElementById(id); }
 
-  // ---------- Plain mode ----------
+  // ---------- Styles: poster, rockstar, plain ----------
+  // Change DEFAULT_STYLE to pick what a first-time visitor sees.
+  var DEFAULT_STYLE = "rock";
+  var STYLES = { poster: "Poster", rock: "Rockstar", plain: "Plain" };
+  var ORDER = ["poster", "rock", "plain"];
   var modeBtn = $("modeToggle");
-  var plain = load("plain", false);
+  var style = load("style", DEFAULT_STYLE);
+  if (!STYLES[style]) style = DEFAULT_STYLE;
+  var plain = false;
+
+  // Elements with data-rock="..." swap their text in the rockstar style.
+  var swaps = Array.prototype.map.call(document.querySelectorAll("[data-rock]"), function (el) {
+    return { el: el, normal: el.textContent, rock: el.dataset.rock };
+  });
+
   function applyMode() {
+    plain = style === "plain";
     document.body.classList.toggle("plain", plain);
-    if (plain) {
-      // Undo any colour the Konami code set, so plain mode is really plain.
+    document.body.classList.toggle("rock", style === "rock");
+    // Drop any colour the Konami code set when leaving the poster style.
+    if (style !== "poster") {
       document.body.style.removeProperty("--stage");
       document.body.style.removeProperty("--stage-dot");
     }
-    modeBtn.textContent = "Plain mode: " + (plain ? "on" : "off");
-    modeBtn.setAttribute("aria-pressed", String(plain));
+    swaps.forEach(function (s) { s.el.textContent = style === "rock" ? s.rock : s.normal; });
+    modeBtn.textContent = "Style: " + STYLES[style];
+    modeBtn.setAttribute("aria-label", "Style: " + STYLES[style] + ". Click to change.");
   }
-  modeBtn.addEventListener("click", function () { plain = !plain; save("plain", plain); applyMode(); });
+  function setStyle(next) { style = next; save("style", style); applyMode(); }
+  modeBtn.addEventListener("click", function () {
+    setStyle(ORDER[(ORDER.indexOf(style) + 1) % ORDER.length]);
+  });
 
   // ---------- Secrets ----------
   var SECRETS = [
@@ -88,7 +106,7 @@
     pos = key === CODE[pos] ? pos + 1 : (key === CODE[0] ? 1 : 0);
     if (pos === CODE.length) {
       pos = 0;
-      if (plain) return;
+      if (style !== "poster") return;
       stageIndex = (stageIndex + 1) % STAGES.length;
       document.body.style.setProperty("--stage", STAGES[stageIndex]);
       document.body.style.setProperty("--stage-dot", "rgba(255,255,255,0.08)");
@@ -148,7 +166,7 @@
         "skills               tools I have used",
         "contact              how to reach me",
         "secrets              what you have found so far",
-        "plain                switch plain mode on or off",
+        "style <name>         poster, rock or plain",
         "clear                clear the screen",
         "",
         "Tab completes commands and project names. Up and down repeat earlier commands."
@@ -200,7 +218,13 @@
       print("If you want admin rights, the contact command is the way in.");
       unlock("sudo");
     },
-    plain: function () { modeBtn.click(); print("Plain mode is " + (plain ? "on." : "off.")); },
+    style: function (arg) {
+      arg = (arg || "").toLowerCase();
+      if (arg === "rockstar") arg = "rock";
+      if (!STYLES[arg]) return print("style: pick one of poster, rock, plain. Now: " + style, "err");
+      setStyle(arg);
+      print("Style is now " + STYLES[style] + ".");
+    },
     clear: function () { out.innerHTML = ""; }
   };
   var NAMES = Object.keys(COMMANDS).filter(function (c) { return c !== "sudo"; });
