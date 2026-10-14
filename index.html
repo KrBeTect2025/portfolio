@@ -34,6 +34,7 @@
 
         <nav aria-label="Sections">
           <ul class="nav">
+            <li><a href="#activity">Activity</a></li>
             <li><a href="#projects">Projects</a></li>
             <li><a href="#terminal">Terminal</a></li>
             <li><a href="#skills">Skills</a></li>
@@ -60,6 +61,24 @@
 
     <!-- RIGHT COLUMN: the work. -->
     <main id="main">
+      <!-- ACTIVITY: GitHub contributions, refreshed daily by .github/workflows/deploy.yml.
+           script.js draws it from data/contributions.json, which only exists on the live site. -->
+      <section id="activity" class="section">
+        <h2 class="section__title" data-rock="On tour">Commit activity</h2>
+        <div class="activity" id="activityCard">
+          <p class="activity__summary" id="activitySummary">
+            Loading contributions...
+          </p>
+          <div class="activity__scroll" id="activityScroll" tabindex="0">
+            <div class="activity__grid" id="activityGrid" role="img" aria-label="GitHub contribution chart"></div>
+          </div>
+          <div class="activity__foot">
+            <span class="activity__legend" aria-hidden="true">Less <i data-l="0"></i><i data-l="1"></i><i data-l="2"></i><i data-l="3"></i><i data-l="4"></i> More</span>
+            <a href="https://github.com/KrBeTect2025" rel="noopener">Full profile on GitHub</a>
+          </div>
+        </div>
+      </section>
+
       <section id="projects" class="section">
         <h2 class="section__title" data-rock="Greatest hits">Selected work</h2>
 

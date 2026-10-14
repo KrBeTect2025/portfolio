@@ -135,6 +135,42 @@ main { display: grid; gap: var(--s12); min-width: 0; }
 }
 .section__lede { margin: calc(var(--s4) * -1) 0 0; color: var(--on-stage); opacity: 0.85; }
 
+/* ---------- Activity (GitHub contributions) ---------- */
+.activity {
+  background: var(--paper); border: var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: var(--s6); display: grid; gap: var(--s4); min-width: 0;
+  --cell: 11px; --gap: 3px;
+  --l0: color-mix(in srgb, var(--ink) 9%, var(--paper));
+  --l1: color-mix(in srgb, var(--hot) 30%, var(--paper));
+  --l2: color-mix(in srgb, var(--hot) 55%, var(--paper));
+  --l3: color-mix(in srgb, var(--hot) 80%, var(--paper));
+  --l4: var(--hot);
+}
+.activity__summary { margin: 0; font-size: 17px; }
+.activity__summary b { font: 800 26px var(--display); }
+.activity__summary small { display: block; font: 12px var(--mono); color: var(--ink-soft); margin-top: var(--s1); }
+.activity__scroll { overflow-x: auto; padding-bottom: var(--s1); }
+/* script.js places each cell with grid-column (week) and grid-row (weekday, after the month row). */
+.activity__grid {
+  display: grid; grid-template-rows: auto repeat(7, var(--cell));
+  grid-auto-columns: var(--cell); gap: var(--gap); width: max-content;
+}
+.activity__month { grid-row: 1; font: 10px/1 var(--mono); color: var(--ink-soft); white-space: nowrap; padding-bottom: 2px; }
+.activity__grid i, .activity__legend i { display: block; width: var(--cell); height: var(--cell); border-radius: 2px; background: var(--l0); }
+.activity [data-l="1"] { background: var(--l1); }
+.activity [data-l="2"] { background: var(--l2); }
+.activity [data-l="3"] { background: var(--l3); }
+.activity [data-l="4"] { background: var(--l4); }
+/* Wide screens: stretch the year to fill the card instead of scrolling. */
+@media (min-width: 901px) {
+  .activity__grid { width: 100%; grid-auto-columns: minmax(0, 1fr); grid-template-rows: auto; }
+  .activity__grid i { width: auto; height: auto; aspect-ratio: 1; }
+}
+.activity__foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s3); font-size: 14px; font-weight: 600; }
+.activity__legend { display: inline-flex; align-items: center; gap: var(--gap); font: 11px var(--mono); color: var(--ink-soft); }
+.activity__badge { font: 700 11px var(--mono); text-transform: uppercase; letter-spacing: .08em; background: var(--sun); border: 2px solid var(--ink); border-radius: 999px; padding: 1px 8px; margin-left: var(--s2); vertical-align: middle; }
+body.plain .activity__badge { border-width: 1px; }
+
 /* ---------- Project cards ---------- */
 .project {
   position: relative; min-width: 0;
@@ -358,6 +394,9 @@ body.rock .skill-group:nth-child(4) { background: #1c1717; color: var(--paper); 
 body.rock .skill-group ul { text-transform: uppercase; font-size: 24px; letter-spacing: 0.02em; }
 
 /* Liner notes and the booking poster. */
+body.rock .activity { border-radius: 2px; transform: rotate(0.4deg); }
+body.rock .activity__grid i { border-radius: 0; }
+body.rock .activity__summary b { font-weight: 400; font-size: 30px; }
 body.rock .about { border-radius: 2px; transform: rotate(0.4deg); }
 body.rock .contact { background: var(--ink); color: var(--paper); border-color: var(--hot); border-radius: 2px; box-shadow: 8px 8px 0 var(--hot); }
 body.rock .contact__big { color: var(--hot); text-transform: uppercase; font-size: clamp(72px, 11vw, 150px); }

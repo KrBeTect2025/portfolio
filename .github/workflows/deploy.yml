@@ -1,0 +1,58 @@
+# Builds and publishes the site to GitHub Pages.
+# Runs on every push to main, once a day (to refresh the contribution chart),
+# and by hand from the Actions tab.
+#
+# One-time setup: repository Settings > Pages > Source: "GitHub Actions".
+# Optional: to count private contributions too, create a personal access token
+# with the read:user scope and save it as a repository secret named
+# CONTRIBUTIONS_TOKEN. Without it, the built-in token is used.
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 3 * * *"   # every day at 03:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch contribution calendar
+        # If this step fails, the site still deploys; the chart shows a link instead.
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.CONTRIBUTIONS_TOKEN || github.token }}
+        run: python scripts/fetch_contributions.py "${{ github.repository_owner }}" data/contributions.json
+
+      - name: Collect site files
+        run: |
+          mkdir -p _site
+          cp index.html styles.css script.js _site/
+          if [ -f data/contributions.json ]; then mkdir -p _site/data && cp data/contributions.json _site/data/; fi
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

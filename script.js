@@ -172,6 +172,7 @@
         "curl /api/projects   all projects as JSON",
         "skills               tools I have used",
         "contact              how to reach me",
+        "contributions        my GitHub activity this year",
         "secrets              what you have found so far",
         "style <name>         poster, rock or plain",
         "clear                clear the screen",
@@ -213,6 +214,22 @@
       var email = document.querySelector(".contact__email a");
       print("email: " + email.textContent);
       document.querySelectorAll(".contact .btn").forEach(function (a) { print(a.textContent.toLowerCase() + ": " + a.href); });
+    },
+    contributions: function () {
+      if (!activity) return print("contributions: no data here yet. It loads on the live site.", "err");
+      var days = [];
+      activity.weeks.forEach(function (w) { days = days.concat(w); });
+      var busiest = days.reduce(function (a, b) { return b.count > a.count ? b : a; }, days[0]);
+      var s = streaks(days);
+      print("git log --since='1 year ago' --author=" + activity.login, "hi");
+      print([
+        "total:          " + activity.total,
+        "active days:    " + days.filter(function (d) { return d.count > 0; }).length + " of " + days.length,
+        "busiest day:    " + busiest.date + " (" + busiest.count + ")",
+        "longest streak: " + plural(s.best, "day"),
+        "current streak: " + plural(s.current, "day"),
+        "updated:        " + activity.updated
+      ].join("\n"));
     },
     secrets: function () {
       print("Found " + foundCount() + " of " + SECRETS.length + ":", "hi");
@@ -308,6 +325,91 @@
       input.focus({ preventScroll: true });
     }
   });
+
+  // ---------- Activity chart ----------
+  // data/contributions.json is written once a day by the GitHub Action in
+  // .github/workflows/deploy.yml. It only exists on the live site, so opening
+  // index.html straight from disk shows the fallback text instead.
+  var activity = null;
+  var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  function plural(n, word) { return n + " " + word + (n === 1 ? "" : "s"); }
+
+  // Longest and current runs of days with at least one contribution.
+  function streaks(days) {
+    var best = 0, run = 0;
+    days.forEach(function (d) { run = d.count > 0 ? run + 1 : 0; best = Math.max(best, run); });
+    var current = 0;
+    for (var i = days.length - 1; i >= 0 && days[i].count > 0; i--) current++;
+    return { best: best, current: current };
+  }
+
+  function drawActivity(data, isSample) {
+    activity = data;
+    var grid = $("activityGrid");
+    var days = [];
+    var lastMonth = -1;
+    grid.textContent = "";
+    data.weeks.forEach(function (week, w) {
+      week.forEach(function (day) {
+        var date = new Date(day.date + "T00:00:00Z");
+        var cell = document.createElement("i");
+        cell.dataset.l = day.level;
+        cell.style.gridColumn = String(w + 1);
+        cell.style.gridRow = String(date.getUTCDay() + 2);
+        cell.title = plural(day.count, "contribution") + " on " + day.date;
+        grid.appendChild(cell);
+        days.push(day);
+      });
+      // A month label above the first week that starts in a new month.
+      var month = new Date(week[0].date + "T00:00:00Z").getUTCMonth();
+      if (month !== lastMonth && w < data.weeks.length - 2) {
+        var label = document.createElement("span");
+        label.className = "activity__month";
+        label.textContent = MONTHS[month];
+        label.style.gridColumn = (w + 1) + " / span 3";
+        label.style.gridRow = "1";
+        grid.appendChild(label);
+        lastMonth = month;
+      }
+    });
+    var active = days.filter(function (d) { return d.count > 0; }).length;
+    var s = streaks(days);
+    var summary = $("activitySummary");
+    summary.innerHTML = "<b></b> in the last year<small></small>";
+    summary.querySelector("b").textContent = plural(data.total, "contribution");
+    summary.querySelector("small").textContent =
+      "Active on " + plural(active, "day") + ". Longest streak: " + plural(s.best, "day") +
+      ". Updated " + data.updated + ".";
+    if (isSample) {
+      var badge = document.createElement("span");
+      badge.className = "activity__badge";
+      badge.textContent = "Sample data";
+      summary.querySelector("b").after(badge);
+    }
+    grid.setAttribute("aria-label", plural(data.total, "contribution") + " on GitHub in the last year, active on " + plural(active, "day") + ".");
+    // On narrow screens the chart scrolls sideways; start at the most recent weeks.
+    var scroller = $("activityScroll");
+    scroller.scrollLeft = scroller.scrollWidth;
+  }
+
+  function activityFallback() {
+    $("activityScroll").hidden = true;
+    document.querySelector(".activity__legend").hidden = true;
+    $("activitySummary").textContent =
+      "The chart appears on the live site, where it refreshes daily. Until then, see the full history on GitHub.";
+  }
+
+  if (window.SAMPLE_CONTRIBUTIONS) {
+    drawActivity(window.SAMPLE_CONTRIBUTIONS, true);
+  } else if (window.fetch && location.protocol !== "file:") {
+    fetch("data/contributions.json", { cache: "no-cache" })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (data) { drawActivity(data, false); })
+      .catch(activityFallback);
+  } else {
+    activityFallback();
+  }
 
   // ---------- Start ----------
   applyMode();
