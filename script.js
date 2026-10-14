@@ -157,6 +157,7 @@
     var line = document.createElement("div");
     var a = document.createElement("a");
     a.href = href; a.textContent = label; a.rel = "noopener"; a.target = "_blank";
+    a.setAttribute("aria-describedby", "newTab");
     line.appendChild(a);
     out.appendChild(line);
     out.scrollTop = out.scrollHeight;
