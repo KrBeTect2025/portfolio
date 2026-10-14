@@ -3,3 +3,5 @@ data/
 _site/
 __pycache__/
 *.bundle
+tests/node_modules/
+tests/output/

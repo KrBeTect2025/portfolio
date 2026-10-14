@@ -47,7 +47,7 @@ jobs:
       - name: Collect site files
         run: |
           mkdir -p _site
-          cp index.html styles.css script.js _site/
+          cp index.html styles.css script.js og.png _site/
           if [ -f data/contributions.json ]; then mkdir -p _site/data && cp data/contributions.json _site/data/; fi
 
       - uses: actions/configure-pages@v5
