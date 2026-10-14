@@ -62,7 +62,7 @@
     { id: "lore",   name: "Bug hunter",     hint: "Read the bugs I fixed on the headline project." },
     { id: "sudo",   name: "Nice try",       hint: "Ask the terminal for admin rights." },
     { id: "name",   name: "Type lab",       hint: "Click my name a few times." },
-    { id: "konami", name: "Old school",     hint: "Up, up, down, down, left, right, left, right, B, A." }
+    { id: "konami", name: "Old school",     hint: "Up, up, down, down, left, right, left, right, B, A. Try it in Poster." }
   ];
   var found = load("secrets", {});
   var countEl = $("secretCount");
@@ -103,7 +103,7 @@
     if (nameClicks >= 5) { nameEl.classList.toggle("party"); unlock("name"); }
   });
 
-  // Secret: the Konami code cycles the background colour.
+  // Secret: the Konami code. In the poster style it also cycles the background colour.
   var STAGES = ["#2231d8", "#ff5233", "#11121a", "#1f9e6e"];
   var stageIndex = 0;
   var CODE = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
@@ -113,11 +113,11 @@
     pos = key === CODE[pos] ? pos + 1 : (key === CODE[0] ? 1 : 0);
     if (pos === CODE.length) {
       pos = 0;
-      if (style !== "poster") return;
+      unlock("konami");
+      if (style !== "poster") return toast("Old school", "Switch to the Poster style to see the colours change.");
       stageIndex = (stageIndex + 1) % STAGES.length;
       document.body.style.setProperty("--stage", STAGES[stageIndex]);
       document.body.style.setProperty("--stage-dot", "rgba(255,255,255,0.08)");
-      unlock("konami");
     }
   });
 
@@ -403,6 +403,7 @@
   if (window.SAMPLE_CONTRIBUTIONS) {
     drawActivity(window.SAMPLE_CONTRIBUTIONS, true);
   } else if (window.fetch && location.protocol !== "file:") {
+    $("activitySummary").textContent = "Loading contributions...";
     fetch("data/contributions.json", { cache: "no-cache" })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (data) { drawActivity(data, false); })
@@ -411,10 +412,49 @@
     activityFallback();
   }
 
+  // ---------- Copy email ----------
+  // mailto links do nothing on computers without a mail app, so offer a copy button too.
+  var copyBtn = $("copyEmail");
+  if (copyBtn && navigator.clipboard) {
+    copyBtn.hidden = false;
+    copyBtn.addEventListener("click", function () {
+      var email = document.querySelector(".contact__email a").textContent.trim();
+      navigator.clipboard.writeText(email).then(function () {
+        copyBtn.textContent = "Copied";
+        setTimeout(function () { copyBtn.textContent = "Copy"; }, 2000);
+      }, function () { toast("Copy failed", "Select the address and copy it by hand."); });
+    });
+  }
+
+  // ---------- Current section in the nav ----------
+  // Highlights the section you are reading, so the sticky sidebar doubles as a map.
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll(".nav a"));
+  var navTicking = false;
+  function markCurrent() {
+    navTicking = false;
+    var line = window.innerHeight * 0.35;
+    var atEnd = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+    var current = null;
+    navLinks.forEach(function (a) {
+      var el = document.querySelector(a.hash);
+      if (el && (atEnd || el.getBoundingClientRect().top <= line)) current = a;
+    });
+    navLinks.forEach(function (a) {
+      if (a === current) a.setAttribute("aria-current", "true");
+      else a.removeAttribute("aria-current");
+    });
+  }
+  window.addEventListener("scroll", function () {
+    if (!navTicking) { navTicking = true; requestAnimationFrame(markCurrent); }
+  }, { passive: true });
+  markCurrent();
+
   // ---------- Start ----------
   applyMode();
   renderCount();
   out.textContent = "";  // drop the no-JavaScript message
   print("Welcome. This terminal answers from the page you are reading.", "hi");
-  print("Type help, or click a command below. Press ` anywhere to jump here.");
+  print("Type help, or click a command below.");
+  // The backtick shortcut only makes sense with a keyboard.
+  if (window.matchMedia && matchMedia("(pointer: fine)").matches) print("Press ` anywhere to jump here.");
 })();
