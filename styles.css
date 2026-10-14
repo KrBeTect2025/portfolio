@@ -136,26 +136,42 @@ main { display: grid; gap: var(--s12); min-width: 0; }
 .section__lede { margin: calc(var(--s4) * -1) 0 0; color: var(--on-stage); opacity: 0.85; }
 
 /* ---------- Activity (GitHub contributions) ---------- */
+/* A dark GitHub-style panel with GitHub's own dark-mode greens, so the chart reads
+   as the real thing. It is the one place on the page that uses GitHub's colours. */
 .activity {
-  background: var(--paper); border: var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
-  padding: var(--s6); display: grid; gap: var(--s4); min-width: 0;
+  --gh-bg: #0d1117; --gh-bar: #161b22; --gh-line: #30363d; --gh-text: #e6edf3; --gh-muted: #8b949e;
+  --gh-green: #3fb950;
+  background: var(--gh-bg); color: var(--gh-text);
+  border: var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: var(--s6); display: grid; gap: var(--s4); min-width: 0; overflow: hidden;
   --cell: 11px; --gap: 3px;
-  --l0: color-mix(in srgb, var(--ink) 9%, var(--paper));
-  --l1: color-mix(in srgb, var(--hot) 30%, var(--paper));
-  --l2: color-mix(in srgb, var(--hot) 55%, var(--paper));
-  --l3: color-mix(in srgb, var(--hot) 80%, var(--paper));
-  --l4: var(--hot);
+  --l0: #161b22; --l1: #0e4429; --l2: #006d32; --l3: #26a641; --l4: #39d353;
+}
+.activity__bar {
+  display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap;
+  margin: calc(var(--s6) * -1) calc(var(--s6) * -1) 0; padding: var(--s2) var(--s4);
+  background: var(--gh-bar); border-bottom: 1px solid var(--gh-line); color: var(--gh-muted); font: 12px var(--mono);
+}
+.activity__bar b { color: var(--gh-text); font-weight: 700; }
+.activity__bar span:last-child { margin-left: auto; }
+.activity__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gh-green); box-shadow: 0 0 0 3px rgba(63, 185, 80, 0.25); }
+.activity a { color: var(--gh-green); }
+/* Plain style: GitHub's light chart instead. */
+body.plain .activity {
+  --gh-bg: #ffffff; --gh-bar: #f6f8fa; --gh-line: #d0d7de; --gh-text: #1f2328; --gh-muted: #59636e; --gh-green: #1a7f37;
+  --l0: #ebedf0; --l1: #9be9a8; --l2: #40c463; --l3: #30a14e; --l4: #216e39;
 }
 .activity__summary { margin: 0; font-size: 17px; }
 .activity__summary b { font: 800 26px var(--display); }
-.activity__summary small { display: block; font: 12px var(--mono); color: var(--ink-soft); margin-top: var(--s1); }
+.activity__summary small { display: block; font: 12px var(--mono); color: var(--gh-muted); margin-top: var(--s1); }
+.activity__summary b { color: var(--gh-green); }
 .activity__scroll { overflow-x: auto; padding-bottom: var(--s1); }
 /* script.js places each cell with grid-column (week) and grid-row (weekday, after the month row). */
 .activity__grid {
   display: grid; grid-template-rows: auto repeat(7, var(--cell));
   grid-auto-columns: var(--cell); gap: var(--gap); width: max-content;
 }
-.activity__month { grid-row: 1; font: 10px/1 var(--mono); color: var(--ink-soft); white-space: nowrap; padding-bottom: 2px; }
+.activity__month { grid-row: 1; font: 10px/1 var(--mono); color: var(--gh-muted); white-space: nowrap; padding-bottom: 2px; }
 .activity__grid i, .activity__legend i { display: block; width: var(--cell); height: var(--cell); border-radius: 2px; background: var(--l0); }
 .activity [data-l="1"] { background: var(--l1); }
 .activity [data-l="2"] { background: var(--l2); }
@@ -167,8 +183,8 @@ main { display: grid; gap: var(--s12); min-width: 0; }
   .activity__grid i { width: auto; height: auto; aspect-ratio: 1; }
 }
 .activity__foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s3); font-size: 14px; font-weight: 600; }
-.activity__legend { display: inline-flex; align-items: center; gap: var(--gap); font: 11px var(--mono); color: var(--ink-soft); }
-.activity__badge { font: 700 11px var(--mono); text-transform: uppercase; letter-spacing: .08em; background: var(--sun); border: 2px solid var(--ink); border-radius: 999px; padding: 1px 8px; margin-left: var(--s2); vertical-align: middle; }
+.activity__legend { display: inline-flex; align-items: center; gap: var(--gap); font: 11px var(--mono); color: var(--gh-muted); }
+.activity__badge { font: 700 11px var(--mono); text-transform: uppercase; letter-spacing: .08em; background: var(--sun); color: #11121a; border: 2px solid #11121a; border-radius: 999px; padding: 1px 8px; margin-left: var(--s2); vertical-align: middle; }
 body.plain .activity__badge { border-width: 1px; }
 
 /* ---------- Project cards ---------- */
