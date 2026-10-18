@@ -244,6 +244,18 @@ function assert(c, m) { if (!c) throw new Error(m); }
     await page.context().close();
   });
 
+  await test("outside links open in a new tab, in-page links do not", async () => {
+    const page = await newPage(); await page.goto(BASE);
+    await termRun(page, "open urlshort");
+    const bad = await page.$$eval("a[href]", as => as.filter(a => {
+      const outside = /^https?:/.test(a.getAttribute("href"));
+      const newTab = a.target === "_blank" && /noopener/.test(a.rel) && a.getAttribute("aria-describedby") === "newTab";
+      return outside ? !newTab : a.target === "_blank";
+    }).map(a => a.getAttribute("href")));
+    assert(!bad.length, bad.join(", "));
+    assert(await page.$("#newTab"), "missing the new-tab description");
+    await page.context().close();
+  });
   await test("terminal: Run button submits the command", async () => {
     const page = await newPage({ viewport: { width: 390, height: 844 } }); await page.goto(BASE);
     await page.fill("#termInput", "whoami"); await page.click(".term__run");

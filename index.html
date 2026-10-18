@@ -58,9 +58,9 @@
 
         <p class="side__links">
           <a class="btn btn--hot" href="#contact">Get in touch</a>
-          <a class="btn" href="https://github.com/KrBeTect2025" rel="noopener">GitHub</a>
+          <a class="btn" href="https://github.com/KrBeTect2025" target="_blank" rel="noopener" aria-describedby="newTab">GitHub</a>
           <!-- TODO(you): add resume.pdf to this folder, then uncomment the line below.
-          <a class="btn" href="resume.pdf">Resume</a> -->
+          <a class="btn" href="resume.pdf" target="_blank" rel="noopener" aria-describedby="newTab">Resume</a> -->
         </p>
 
         <div class="side__game">
@@ -88,7 +88,7 @@
           </div>
           <div class="activity__foot">
             <span class="activity__legend" aria-hidden="true">Less <i data-l="0"></i><i data-l="1"></i><i data-l="2"></i><i data-l="3"></i><i data-l="4"></i> More</span>
-            <a href="https://github.com/KrBeTect2025" rel="noopener">Full profile on GitHub</a>
+            <a href="https://github.com/KrBeTect2025" target="_blank" rel="noopener" aria-describedby="newTab">Full profile on GitHub</a>
           </div>
         </div>
       </section>
@@ -124,7 +124,7 @@
               hand-checked answers has not been measured yet.
             </p>
           </details>
-          <p class="links"><a href="https://github.com/KrBeTect2025/lab-report-explainer" rel="noopener">Source code</a></p>
+          <p class="links"><a href="https://github.com/KrBeTect2025/lab-report-explainer" target="_blank" rel="noopener" aria-describedby="newTab">Source code</a></p>
         </article>
 
         <div class="project-row">
@@ -142,8 +142,8 @@
             </dl>
             <p class="links">
               <!-- TODO(you): check this live link still works before publishing. -->
-              <a href="https://rescue-sync-delta.vercel.app" rel="noopener">Live demo</a>
-              <a href="https://github.com/KrBeTect2025/RescueSync" rel="noopener">Source code</a>
+              <a href="https://rescue-sync-delta.vercel.app" target="_blank" rel="noopener" aria-describedby="newTab">Live demo</a>
+              <a href="https://github.com/KrBeTect2025/RescueSync" target="_blank" rel="noopener" aria-describedby="newTab">Source code</a>
             </p>
           </article>
 
@@ -158,7 +158,7 @@
               <div><dt>Stack</dt><dd>Python, FastAPI, SQLite, Redis</dd></div>
               <div><dt>Status</dt><dd>Small learning project</dd></div>
             </dl>
-            <p class="links"><a href="https://github.com/KrBeTect2025/urlshort" rel="noopener">Source code</a></p>
+            <p class="links"><a href="https://github.com/KrBeTect2025/urlshort" target="_blank" rel="noopener" aria-describedby="newTab">Source code</a></p>
           </article>
         </div>
       </section>
@@ -213,9 +213,9 @@
         <!-- TODO(you): put your real email address in both places below. -->
         <p class="contact__email"><a href="mailto:you@example.com">you@example.com</a> <button type="button" class="copy" id="copyEmail" hidden>Copy</button></p>
         <p class="side__links">
-          <a class="btn" href="https://github.com/KrBeTect2025" rel="noopener">GitHub</a>
+          <a class="btn" href="https://github.com/KrBeTect2025" target="_blank" rel="noopener" aria-describedby="newTab">GitHub</a>
           <!-- TODO(you): add your LinkedIn URL or delete this line. -->
-          <a class="btn" href="https://www.linkedin.com/" rel="noopener">LinkedIn</a>
+          <a class="btn" href="https://www.linkedin.com/" target="_blank" rel="noopener" aria-describedby="newTab">LinkedIn</a>
         </p>
       </section>
 
@@ -239,6 +239,8 @@
   </div>
 
   <div class="toasts" id="toasts" aria-live="polite"></div>
+  <!-- Read out by screen readers on every link that opens a new tab. -->
+  <span id="newTab" hidden>Opens in a new tab.</span>
   <script src="script.js"></script>
 </body>
 </html>
