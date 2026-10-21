@@ -451,7 +451,7 @@
 
     document.querySelectorAll(".project").forEach(function (card) {
       items.push({ group: "Projects", label: clean(card.querySelector("h3").textContent),
-        detail: clean(card.querySelector(".project__kicker").textContent), icon: "folder",
+        detail: clean(card.querySelector(".project__tag").textContent), icon: "folder",
         run: function () { return jump(card); } });
     });
 

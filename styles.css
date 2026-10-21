@@ -211,6 +211,7 @@ body.plain .activity__badge { border-width: 1px; }
 .project__kicker { font: 700 12px var(--mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-soft); }
 .project--feature { background: var(--paper); }
 .project--feature .project__kicker { color: var(--hot-text); }
+.project .project__tag { font: italic 500 20px/1.3 var(--serif); color: var(--ink-soft); margin-top: calc(var(--s2) * -1); }
 .project-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: var(--s6); }
 
 .sticker {
@@ -364,6 +365,8 @@ body.plain .decal-card__tidy, body.plain .decal-card__hint { display: none; }
   margin: 0; background: var(--paper); border: var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
   padding: var(--s6); font: italic 500 clamp(21px, 2.4vw, 26px)/1.45 var(--serif); max-width: 60ch;
 }
+.now { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); max-width: 60ch; color: var(--on-stage); font-size: 17px; line-height: 1.5; }
+.now b { font: 700 13px var(--mono); text-transform: uppercase; letter-spacing: 0.08em; }
 .contact { background: var(--hot); border: var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: var(--s8) var(--s6); color: #fffaf0; }
 body.plain .contact { background: var(--paper); color: var(--ink); }
 .contact__big { font-size: clamp(52px, 8vw, 104px); font-weight: 800; letter-spacing: -0.03em; line-height: 0.9; }

@@ -394,7 +394,7 @@ function assert(c, m) { if (!c) throw new Error(m); }
     await setStyle(page, "rock");
     assert(await page.$eval(".contact__big .sr-only", e => e.textContent) === "Book me.", "rock swap lost the letters");
     const role = await page.$eval(".role", e => e.textContent.replace(/\s+/g, " ").trim());
-    assert(role === "Backend and ML developer. I build APIs that turn messy documents into data you can check.", role);
+    assert(role === "I build backend APIs and ML tools that turn messy documents into data you can check.", role);
     await page.context().close();
   });
   await test("style switch from the button changes the theme colour too", async () => {
