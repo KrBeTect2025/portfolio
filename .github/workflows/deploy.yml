@@ -49,6 +49,8 @@ jobs:
           mkdir -p _site
           cp index.html styles.css script.js og.png _site/
           if [ -f data/contributions.json ]; then mkdir -p _site/data && cp data/contributions.json _site/data/; fi
+          # Tag the CSS and JS links with this commit, so a browser never mixes a new page with an old cached stylesheet.
+          sed -i "s|href=\"styles.css\"|href=\"styles.css?v=${GITHUB_SHA::7}\"|; s|src=\"script.js\"|src=\"script.js?v=${GITHUB_SHA::7}\"|" _site/index.html
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
