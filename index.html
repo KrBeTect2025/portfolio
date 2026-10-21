@@ -42,7 +42,7 @@
         <p class="hello" data-rock="Live tonight:">Hello, I am</p>
         <h1 class="name" id="name"><span>Krish</span> <span>Rathore</span></h1>
         <p class="role" data-stream>
-          Backend and ML developer. I build <em>APIs that turn messy documents into data you can check.</em>
+          I build backend APIs and ML tools that turn <em>messy documents into data you can check.</em>
         </p>
 
         <nav aria-label="Sections">
@@ -56,7 +56,7 @@
         </nav>
 
         <p class="side__links">
-          <a class="btn btn--hot" href="#contact">Get in touch</a>
+          <a class="btn btn--hot" href="#contact">Say hi</a>
           <a class="btn" href="https://github.com/KrBeTect2025" target="_blank" rel="noopener" aria-describedby="newTab">GitHub</a>
           <!-- TODO(you): add resume.pdf to this folder, then uncomment the line below.
           <a class="btn" href="resume.pdf" target="_blank" rel="noopener" aria-describedby="newTab">Resume</a> -->
@@ -94,11 +94,13 @@
 
       <section id="projects" class="section">
         <h2 class="section__title" data-rock="Greatest hits">Selected work</h2>
+        <p class="section__lede">A few things I have built and tested. Each card says what works and what does not yet.</p>
 
         <article class="project project--feature">
           <span class="sticker sticker--sun" data-loud aria-hidden="true">52 tests<br>passing</span>
           <p class="project__kicker" data-rock="Headliner">Headline project</p>
           <h3>lab-report-explainer</h3>
+          <p class="project__tag">Lab report reader with checked results</p>
           <p>
             Reads a lab report PDF, rebuilds the table of test results from the position of each
             word on the page, and marks every result low, normal or high using plain code, not an
@@ -131,8 +133,9 @@
             <span class="sticker sticker--mint" data-loud aria-hidden="true">live</span>
             <p class="project__kicker">Front end</p>
             <h3>RescueSync</h3>
+            <p class="project__tag">Disaster-management dashboard</p>
             <p>
-              A disaster-management dashboard: 12 pages with maps, charts, alerts and
+              Twelve pages with maps, charts, alerts and
               multi-language support, backed by a small Express API. Deployed front and back.
             </p>
             <dl class="stats">
@@ -149,8 +152,9 @@
           <article class="project">
             <p class="project__kicker">Backend</p>
             <h3>urlshort</h3>
+            <p class="project__tag">URL shortener with a Redis cache</p>
             <p>
-              A URL shortener in FastAPI. Turns each database row id into a base-62 short code
+              Built with FastAPI. Turns each database row id into a base-62 short code
               and checks Redis before SQLite, filling the cache on a miss.
             </p>
             <dl class="stats">
@@ -181,6 +185,10 @@
           code that checks every number before a person sees it. I like work where I can write a
           test that proves a bug is fixed.
         </p>
+        <ul class="now">
+          <li><b>Lately:</b> PDF parsing, FastAPI services and caching.</li>
+          <li><b>Currently building:</b> plain-language explanations for lab-report-explainer.</li>
+        </ul>
       </section>
 
       <section id="contact" class="section contact">
