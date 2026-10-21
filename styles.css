@@ -409,13 +409,36 @@ body.plain .style-hint__choices button[aria-pressed="true"] { background: var(--
 }
 .toast strong { display: block; font: 700 11px var(--mono); text-transform: uppercase; letter-spacing: 0.08em; }
 .toast:nth-last-child(n+3) { display: none; }
+.toast { cursor: pointer; }
+.toast.is-leaving { animation: toast-out .2s ease-in forwards; }
 @keyframes pop { from { transform: translateY(10px) rotate(-2deg); opacity: 0; } }
+@keyframes toast-out { to { transform: translateX(24px); opacity: 0; } }
+
+/* Feedback on the secrets counter: a bump for each find, a stamp when all are found. */
+.secrets.is-bumped { animation: bump .45s var(--ease-pop, ease-out); }
+@keyframes bump { 40% { scale: 1.12; rotate: -3deg; } }
+.secrets.is-complete { background: var(--hot); color: var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+.secrets.is-complete::after { content: " \2713"; }
+body.plain .secrets.is-complete { background: var(--paper); color: var(--hot); box-shadow: none; }
+
+/* The name wobbles on clicks two to four of its secret, so the clicks visibly count. */
+.name.is-nudged { animation: nudge .35s var(--ease-pop, ease-out); }
+@keyframes nudge { 30% { rotate: -2deg; } 65% { rotate: 1.5deg; } }
+
+/* Confetti for finding every secret. script.js makes and removes the pieces. */
+.confetti {
+  position: fixed; z-index: 96; width: 10px; height: 14px; border: 2px solid var(--ink); border-radius: 2px;
+  pointer-events: none; animation: confetti 1s cubic-bezier(.2, .7, .3, 1) forwards;
+}
+@keyframes confetti {
+  to { transform: translate(var(--x), calc(var(--y) + 80px)) rotate(var(--r)); opacity: 0; }
+}
 
 /* ---------- Respect reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .ticker__track { animation: none; }
-  .toast { animation: none; }
+  .toast, .toast.is-leaving, .secrets.is-bumped, .name.is-nudged { animation: none; }
   .btn { transition: none; }
 }
 
@@ -448,6 +471,12 @@ body.plain .style-hint__choices button[aria-pressed="true"] { background: var(--
 .cmdk.is-open { width: min(580px, calc(100vw - 24px)); border-radius: var(--cmdk-radius-open); }
 .cmdk [hidden] { display: none !important; }
 .cmdk.is-tucked { transform: translateY(calc(100% + 40px)); }
+/* Past the first screen the pill shrinks to a round search button so it covers less of the
+   page. Pointing at it or tabbing to it grows it back into the full pill. */
+.cmdk.is-compact:not(.is-open):not(:hover):not(:focus-within) { width: 60px; }
+.cmdk.is-compact:not(.is-open):not(:hover):not(:focus-within) .cmdk__trigger { justify-content: center; padding: 0; gap: 0; }
+.cmdk.is-compact:not(.is-open):not(:hover):not(:focus-within) .cmdk__typed,
+.cmdk.is-compact:not(.is-open):not(:hover):not(:focus-within) .cmdk__trigger kbd { display: none; }
 
 .cmdk-overlay {
   position: fixed; inset: 0; z-index: 90;

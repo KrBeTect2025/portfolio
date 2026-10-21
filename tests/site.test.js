@@ -247,6 +247,26 @@ function assert(c, m) { if (!c) throw new Error(m); }
     await page.context().close(); await calm.context().close();
   });
 
+  await test("palette: the pill shrinks to a button while reading and grows back on focus", async () => {
+    const page = await newPage(); await page.goto(BASE);
+    const full = (await page.$eval(".cmdk", e => e.getBoundingClientRect().width));
+    await page.mouse.move(5, 5);
+    await page.evaluate(() => window.scrollTo(0, 1600)); await page.waitForTimeout(200);
+    await page.evaluate(() => window.scrollTo(0, 1200)); await page.waitForTimeout(800);
+    const small = await page.$eval(".cmdk", e => ({ w: e.getBoundingClientRect().width, c: e.classList.contains("is-compact") }));
+    assert(small.c && small.w < 80 && full > 250, "not compact: " + JSON.stringify(small) + " full " + full);
+    await page.focus("#paletteTrigger"); await page.waitForTimeout(800);
+    assert(await page.$eval(".cmdk", e => e.getBoundingClientRect().width) > 250, "focus did not grow it back");
+    await page.context().close();
+  });
+  await test("palette: the pill stops typing once the palette has been used", async () => {
+    const page = await newPage(); await page.goto(BASE);
+    await page.focus("body"); await page.keyboard.press("/"); await page.keyboard.press("Escape");
+    const a = await page.textContent("#paletteTyped"); await page.waitForTimeout(3000);
+    assert(a === "Explore my projects" && await page.textContent("#paletteTyped") === a, "still typing: " + a);
+    await page.context().close();
+  });
+
   // ---------- Styles ----------
   await test("style button cycles poster > rock > plain and remembers", async () => {
     const page = await newPage(); await page.goto(BASE); await page.evaluate(() => localStorage.clear()); await page.reload();
@@ -272,8 +292,33 @@ function assert(c, m) { if (!c) throw new Error(m); }
     for (const k of ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"]) await page.keyboard.press(k);
     await page.focus('.decal[data-tool="git"]'); await page.keyboard.press("ArrowRight");
     assert(await page.textContent("#secretCount") === "6", "count " + await page.textContent("#secretCount"));
+    assert(/All 6 secrets found/.test(await page.textContent("#toasts")), "no ending toast");
+    assert(await page.$eval("#secretsBtn", b => b.classList.contains("is-complete")), "counter not marked complete");
     await page.reload();
     assert(await page.textContent("#secretCount") === "6", "not persisted");
+    await page.click("#secretsBtn");
+    const labels = await page.$$eval('#paletteList [role="option"] .cmdk__label', o => o.map(x => x.textContent));
+    assert(labels[labels.length - 1] === "Say hi", "secrets view has no way on: " + labels.join(","));
+    await page.evaluate(() => [...document.querySelectorAll('#paletteList [role="option"]')].pop().click());
+    await page.waitForTimeout(900);
+    assert(await page.evaluate(() => document.activeElement.id) === "contact", "Say hi did not reach contact");
+    await page.context().close();
+  });
+
+  await test("toasts stay while pointed at and go away on click", async () => {
+    const page = await newPage(); await page.goto(BASE); await page.evaluate(() => localStorage.clear()); await page.reload();
+    await page.click("#loreDetails summary");
+    await page.hover(".toast"); await page.waitForTimeout(4200);
+    assert(await page.$(".toast"), "toast left while being read");
+    await page.click(".toast"); await page.waitForTimeout(400);
+    assert(!(await page.$(".toast")), "click did not dismiss");
+    await page.context().close();
+  });
+
+  await test("name secret: clicks before the fifth give feedback", async () => {
+    const page = await newPage(); await page.goto(BASE);
+    await page.click("#name"); await page.click("#name");
+    assert(await page.$eval("#name", n => n.classList.contains("is-nudged")), "no wobble on the second click");
     await page.context().close();
   });
 
@@ -299,6 +344,8 @@ function assert(c, m) { if (!c) throw new Error(m); }
     assert(/github\.com\/KrBeTect2025\/portfolio/.test(a.href) && a.t === "_blank", JSON.stringify(a));
     await page.click('.decal[data-tool="javascript"]');
     assert(await page.isHidden("#decalBody") && !(await page.$('.decal[aria-pressed="true"]')), "second press did not let go");
+    await page.click('.decal[data-tool="redis"]'); await page.keyboard.press("Escape");
+    assert(await page.isHidden("#decalBody"), "Escape did not let go");
     await page.context().close();
   });
   await test("stickers: dragging moves one inside the lid, unlocks a secret, and tidy puts it back", async () => {

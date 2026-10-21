@@ -162,16 +162,64 @@
   $("secretTotal").textContent = SECRETS.length;
 
   function foundCount() { return SECRETS.filter(function (s) { return found[s.id]; }).length; }
-  function renderCount() { countEl.textContent = foundCount(); }
+  function allFound() { return foundCount() === SECRETS.length; }
+  function renderCount() {
+    countEl.textContent = foundCount();
+    $("secretsBtn").classList.toggle("is-complete", allFound());
+  }
+  // Restarts a one-shot CSS animation class on an element.
+  function replay(el, cls) {
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+  }
 
-  function toast(title, body) {
+  // A toast stays while the pointer rests on it, so it can be read at any pace, and a click
+  // sends it away early. ms is how long it stays otherwise.
+  function toast(title, body, ms) {
     var el = document.createElement("div");
     el.className = "toast";
+    el.title = "Click to dismiss";
     el.innerHTML = "<strong></strong><span></span>";
     el.querySelector("strong").textContent = title;
     el.querySelector("span").textContent = body;
     $("toasts").appendChild(el);
-    setTimeout(function () { el.remove(); }, 3500);
+    var left = ms || 3500, since = 0, timer = null;
+    function run() { since = Date.now(); timer = setTimeout(leave, Math.max(left, 1200)); }
+    function hold() { clearTimeout(timer); left -= Date.now() - since; }
+    function leave() {
+      clearTimeout(timer);
+      if (reduceMotion.matches) return el.remove();
+      el.classList.add("is-leaving");
+      setTimeout(function () { el.remove(); }, 200);
+    }
+    el.addEventListener("pointerenter", hold);
+    el.addEventListener("pointerleave", run);
+    el.addEventListener("click", leave);
+    run();
+    return el;
+  }
+
+  // A short burst of confetti from an element. The one big moment on the page: finding every secret.
+  function burst(from) {
+    if (reduceMotion.matches || !from) return;
+    var r = from.getBoundingClientRect();
+    var colors = ["var(--sun)", "var(--hot)", "var(--pink)", "#3fe0a5", "#fff"];
+    for (var i = 0; i < 18; i++) {
+      var bit = document.createElement("i");
+      bit.className = "confetti";
+      bit.setAttribute("aria-hidden", "true");
+      var angle = (i / 18) * Math.PI * 2 + Math.random() * 0.4;
+      var dist = 70 + Math.random() * 90;
+      bit.style.left = r.left + r.width / 2 + "px";
+      bit.style.top = r.top + r.height / 2 + "px";
+      bit.style.setProperty("--x", Math.round(Math.cos(angle) * dist) + "px");
+      bit.style.setProperty("--y", Math.round(Math.sin(angle) * dist - 40) + "px");
+      bit.style.setProperty("--r", Math.round(Math.random() * 540 - 270) + "deg");
+      bit.style.background = colors[i % colors.length];
+      document.body.appendChild(bit);
+      setTimeout(bit.remove.bind(bit), 1100);
+    }
   }
 
   function unlock(id) {
@@ -181,7 +229,11 @@
     found[id] = true;
     save("secrets", found);
     renderCount();
-    toast("Secret " + foundCount() + " of " + SECRETS.length, s.name);
+    replay($("secretsBtn"), "is-bumped");
+    if (!allFound()) return toast("Secret " + foundCount() + " of " + SECRETS.length, s.name);
+    // The last one is the peak of the game, so it gets more than a counter: a longer toast,
+    // a burst, and a nudge towards the real goal of the page, getting in touch.
+    burst(toast("All " + SECRETS.length + " secrets found", s.name + ". You have seen everything here. Now say hi.", 7000));
   }
 
   // Secret: open the bug list.
@@ -194,6 +246,8 @@
   nameEl.addEventListener("click", function () {
     nameClicks += 1;
     if (nameClicks >= 5) { nameEl.classList.toggle("party"); unlock("name"); }
+    // Clicks two to four give a small wobble, so it is clear something is listening.
+    else if (nameClicks > 1) replay(nameEl, "is-nudged");
   });
 
   // Secret: the Konami code. In the poster style it also cycles the background colour.
@@ -341,10 +395,16 @@
     if (skipClick === d) { skipClick = null; return; }
     skipClick = null;
     pick(d);
+    // On a phone the card can sit below the screen. Bring it up so the answer is seen.
+    var card = $("decalCard").getBoundingClientRect();
+    if (picked && (card.bottom > innerHeight || card.top < 0)) {
+      $("decalCard").scrollIntoView({ block: "nearest", behavior: reduceMotion.matches ? "auto" : "smooth" });
+    }
   });
   var NUDGE = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
   lid.addEventListener("keydown", function (e) {
     var d = e.target.closest(".decal");
+    if (d && e.key === "Escape" && picked) { e.preventDefault(); return pick(picked); }
     var step = NUDGE[e.key];
     if (!d || !step || plain || e.altKey || e.ctrlKey || e.metaKey) return;
     e.preventDefault();
@@ -492,18 +552,35 @@
       items.push({ group: "Found " + foundCount() + " of " + SECRETS.length, label: got ? s.name : "Not found yet",
         detail: s.hint, icon: got ? "check" : "lock", keep: true, inert: true });
     });
+    if (allFound()) {
+      items.push({ group: "That is all of them", label: "Say hi", detail: "You have seen everything. Let's talk.", icon: "mail",
+        run: function () { return jump($("contact")); } });
+    }
     return items;
   }
 
   function filter(items, query) {
     var q = query.trim().toLowerCase();
     var words = q.split(/\s+/).filter(Boolean);
-    return items.filter(function (it) {
+    var matches = items.filter(function (it) {
       if (it.hidden) return it.hidden.test(q);
       if (it.needsQuery && !q) return false;
       var hay = (it.label + " " + it.detail + " " + it.group + " " + (it.words || "")).toLowerCase();
       return words.every(function (w) { return hay.indexOf(w) !== -1; });
     });
+    if (!q) return matches;
+    // Typing a name should put that thing first: "redis" means the Redis sticker, not every
+    // card that mentions Redis. Whole groups move, so their headings stay together.
+    function score(it) {
+      var l = it.label.toLowerCase();
+      return l === q ? 0 : l.indexOf(q) === 0 ? 1 : 2;
+    }
+    var best = {};
+    matches.forEach(function (it) { best[it.group] = Math.min(best[it.group] === undefined ? 2 : best[it.group], score(it)); });
+    return matches
+      .map(function (it, i) { return { it: it, i: i }; })
+      .sort(function (a, b) { return best[a.it.group] - best[b.it.group] || a.i - b.i; })
+      .map(function (x) { return x.it; });
   }
 
   function render() {
@@ -589,6 +666,7 @@
   function openPalette(startView) {
     if (isOpen) return;
     isOpen = true;
+    learned = true;
     lastFocus = document.activeElement;
     stopTyping();
     panel.classList.remove("is-tucked");
@@ -695,35 +773,55 @@
   });
 
   // The pill types out a few suggestions, then deletes them, like someone at a prompt.
-  var PROMPTS = ["Explore my projects", "Find all " + SECRETS.length + " secrets", "Switch the style", "Say hi"];
+  // Content comes first and the game last. The typing is there to teach what the pill does, so
+  // it stops once it has done that: after two rounds, or for good once the palette has been used.
+  var PROMPTS = ["Explore my projects", "Search tools and skills", "Say hi", "Switch the style", "Find all " + SECRETS.length + " secrets"];
   var typed = $("paletteTyped");
   var typeTimer = null;
+  var learned = !!found.shell;
   function stopTyping() { clearTimeout(typeTimer); typeTimer = null; }
   function startTyping() {
     stopTyping();
-    if (reduceMotion.matches) { typed.textContent = PROMPTS[0]; return; }
-    var n = 0, len = PROMPTS[0].length, deleting = true;
-    (function step() {
+    typed.textContent = PROMPTS[0];
+    if (reduceMotion.matches || learned) return;
+    var n = 0, len = PROMPTS[0].length, deleting = true, rounds = 0;
+    function step() {
+      // Nobody can read it while the pill is shrunk to a button, so wait.
+      if (panel.classList.contains("is-compact") && !panel.matches(":hover, :focus-within")) {
+        typeTimer = setTimeout(step, 600);
+        return;
+      }
       var word = PROMPTS[n];
       len += deleting ? -1 : 1;
       typed.textContent = word.slice(0, len);
       var wait = deleting ? 35 : 70;
-      if (len === word.length) { deleting = true; wait = 2200; }
-      if (len === 0) { deleting = false; n = (n + 1) % PROMPTS.length; wait = 400; }
+      if (len === word.length) {
+        if (n === 0 && rounds >= 2) return;
+        deleting = true; wait = 2200;
+      }
+      if (len === 0) {
+        deleting = false; n = (n + 1) % PROMPTS.length; wait = 400;
+        if (n === 0) rounds++;
+      }
       typeTimer = setTimeout(step, wait);
-    })();
+    }
+    // Hold the first suggestion long enough to read before it starts deleting.
+    typeTimer = setTimeout(step, 2200);
   }
 
   // Tuck the pill away while you scroll down to read, bring it back when you scroll up.
+  // Past the first screen it comes back as a small round search button, so it does not sit on
+  // top of the text being read. Pointing at it or focusing it opens it back out to the full pill.
   var lastY = window.scrollY;
-  window.addEventListener("scroll", function () {
+  function placePill() {
     var y = window.scrollY;
-    if (!isOpen && Math.abs(y - lastY) > 6) {
-      var atEnd = window.innerHeight + y >= document.documentElement.scrollHeight - 40;
-      panel.classList.toggle("is-tucked", y > lastY && y > 240 && !atEnd);
-      lastY = y;
-    }
-  }, { passive: true });
+    if (isOpen || Math.abs(y - lastY) <= 6) return;
+    var atEnd = window.innerHeight + y >= document.documentElement.scrollHeight - 40;
+    panel.classList.toggle("is-tucked", y > lastY && y > 240 && !atEnd);
+    panel.classList.toggle("is-compact", y > 240);
+    lastY = y;
+  }
+  window.addEventListener("scroll", placePill, { passive: true });
   // Focusing the pill with Tab always brings it back into view.
   trigger.addEventListener("focus", function () { panel.classList.remove("is-tucked"); });
 
@@ -737,6 +835,7 @@
 
   panel.hidden = false;
   overlay.hidden = false;
+  panel.classList.toggle("is-compact", window.scrollY > 240);
   startTyping();
 
   // ---------- Reveal on scroll ----------
