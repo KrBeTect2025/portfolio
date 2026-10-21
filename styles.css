@@ -125,7 +125,6 @@ body.plain .btn:hover { transform: none; box-shadow: none; border-color: var(--h
 .btn--hot { background: var(--hot); color: var(--ink); }
 body.plain .btn--hot { color: #fffaf0; }
 
-.side__game { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; }
 .secrets, .mode {
   font: 700 13px var(--mono); color: var(--ink); background: var(--sun);
   border: 2px solid var(--ink); border-radius: 999px; padding: var(--s2) var(--s4); cursor: pointer;
@@ -295,7 +294,7 @@ body.plain .stats div { border: 1px solid #e3e4e8; }
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
 }
 .decal--round { height: calc(var(--w) * var(--k, 1)); margin-top: calc(var(--w) * var(--k, 1) * .08); }
-.lid__stickers li.big { --k: 1.22; }
+.lid__stickers li.big { --k: 1.45; }
 .big .decal__name { font-size: 14px; }
 .decal--round .decal__cut, .decal--round .decal__face, .decal--round .decal__face::before { border-radius: 50%; }
 .decal--round .decal__logo { margin-top: 18%; }
@@ -363,7 +362,7 @@ body.plain .decal-card__tidy, body.plain .decal-card__hint { display: none; }
 /* ---------- About and contact ---------- */
 .about {
   margin: 0; background: var(--paper); border: var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
-  padding: var(--s6); font: italic 500 clamp(21px, 2.4vw, 26px)/1.45 var(--serif); max-width: 60ch;
+  padding: var(--s6); font-size: clamp(18px, 1.9vw, 21px); line-height: 1.55; max-width: 60ch;
 }
 .now { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); max-width: 60ch; color: var(--on-stage); font-size: 17px; line-height: 1.5; }
 .now b { font: 700 13px var(--mono); text-transform: uppercase; letter-spacing: 0.08em; }
@@ -389,7 +388,7 @@ body.rock .copy { border-radius: 2px; }
 .style-hint p { margin: 0; }
 .style-hint__kicker { font: 700 12px var(--mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--sun); }
 body.plain .style-hint__kicker { color: var(--hot); }
-.style-hint h2 { font-size: clamp(26px, 3.4vw, 38px); font-weight: 800; }
+.style-hint__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3) var(--s4); }
 .style-hint__choices { display: flex; flex-wrap: wrap; gap: var(--s3); }
 .style-hint__choices button {
   font: 800 17px var(--display); color: var(--ink); background: var(--paper);

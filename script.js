@@ -108,8 +108,10 @@
     document.querySelectorAll("#styleChoices button").forEach(function (b) {
       b.setAttribute("aria-pressed", String(b.dataset.style === style));
     });
-    modeBtn.textContent = "Style: " + STYLES[style];
-    modeBtn.setAttribute("aria-label", "Style: " + STYLES[style] + ". Click to change.");
+    if (modeBtn) {
+      modeBtn.textContent = "Style: " + STYLES[style];
+      modeBtn.setAttribute("aria-label", "Style: " + STYLES[style] + ". Click to change.");
+    }
     if (themeMeta) themeMeta.content = THEME_COLORS[style];
   }
 
@@ -144,7 +146,8 @@
     var b = e.target.closest("button[data-style]");
     if (b) setStyle(b.dataset.style, originOf(e, b));
   });
-  modeBtn.addEventListener("click", function (e) {
+  // The Style button left the hero; the bottom choices replace it. Kept working in case it returns.
+  if (modeBtn) modeBtn.addEventListener("click", function (e) {
     setStyle(ORDER[(ORDER.indexOf(style) + 1) % ORDER.length], originOf(e, modeBtn));
   });
 
@@ -441,11 +444,12 @@
     items.push({ group: "Quick actions", label: "Secrets", detail: "Found " + foundCount() + " of " + SECRETS.length,
       icon: "star", words: "game hidden easter eggs", keep: true, run: function () { setView("secrets"); } });
 
-    document.querySelectorAll(".nav a").forEach(function (a) {
-      var id = a.hash.slice(1);
+    // Every section, in page order. The nav only lists the main three, so read the page instead.
+    document.querySelectorAll("main > section[id]").forEach(function (sec) {
+      var id = sec.id;
       var detail = SECTION_NOTES[id] || "";
       if (id === "activity" && activity) detail = plural(activity.total, "contribution") + " in the last year";
-      items.push({ group: "Sections", label: clean(a.textContent), detail: detail, icon: "hash",
+      items.push({ group: "Sections", label: id.charAt(0).toUpperCase() + id.slice(1), detail: detail, icon: "hash",
         run: function () { return jump(document.getElementById(id)); } });
     });
 

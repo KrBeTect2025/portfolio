@@ -56,8 +56,8 @@
   <!-- A moving strip of real facts. Decoration only, so screen readers skip it. -->
   <div class="ticker" aria-hidden="true" data-loud>
     <div class="ticker__track">
-      <span>52 tests passing</span><span>FastAPI</span><span>PDF tables rebuilt from word positions</span><span>Redis cache-aside</span><span>Results deleted after 24 h</span><span>Press / to explore</span>
-      <span>52 tests passing</span><span>FastAPI</span><span>PDF tables rebuilt from word positions</span><span>Redis cache-aside</span><span>Results deleted after 24 h</span><span>Press / to explore</span>
+      <span>52 tests passing</span><span>FastAPI</span><span>PDF tables rebuilt from word positions</span><span>Redis cache-aside</span><span>Results deleted after 24 h</span>
+      <span>52 tests passing</span><span>FastAPI</span><span>PDF tables rebuilt from word positions</span><span>Redis cache-aside</span><span>Results deleted after 24 h</span>
     </div>
   </div>
 
@@ -73,11 +73,9 @@
 
         <nav aria-label="Sections">
           <ul class="nav">
-            <li><a href="#activity">Activity</a></li>
             <li><a href="#projects">Projects</a></li>
             <li><a href="#skills">Skills</a></li>
             <li><a href="#about">About</a></li>
-            <li><a href="#contact">Contact</a></li>
           </ul>
         </nav>
 
@@ -88,36 +86,11 @@
           <a class="btn" href="resume.pdf" target="_blank" rel="noopener" aria-describedby="newTab">Resume</a> -->
         </p>
 
-        <div class="side__game">
-          <button type="button" class="secrets" id="secretsBtn" aria-haspopup="dialog">
-            Found <b id="secretCount">0</b> of <b id="secretTotal">6</b> secrets
-          </button>
-          <button type="button" class="mode" id="modeToggle">Style: Poster</button>
-        </div>
       </div>
     </aside>
 
     <!-- RIGHT COLUMN: the work. -->
     <main id="main">
-      <!-- ACTIVITY: GitHub contributions, refreshed daily by .github/workflows/deploy.yml.
-           script.js draws it from data/contributions.json, which only exists on the live site. -->
-      <section id="activity" class="section">
-        <h2 class="section__title" data-rock="On tour">Commit activity</h2>
-        <div class="activity" id="activityCard">
-          <div class="activity__bar"><span class="activity__dot" aria-hidden="true"></span><b>KrBeTect2025</b> / contributions <span>synced daily from GitHub</span></div>
-          <p class="activity__summary" id="activitySummary">
-            My full contribution history is on GitHub.
-          </p>
-          <div class="activity__scroll" id="activityScroll" tabindex="0">
-            <div class="activity__grid" id="activityGrid" role="img" aria-label="GitHub contribution chart"></div>
-          </div>
-          <div class="activity__foot">
-            <span class="activity__legend" aria-hidden="true">Less <i data-l="0"></i><i data-l="1"></i><i data-l="2"></i><i data-l="3"></i><i data-l="4"></i> More</span>
-            <a href="https://github.com/KrBeTect2025" target="_blank" rel="noopener" aria-describedby="newTab">Full profile on GitHub</a>
-          </div>
-        </div>
-      </section>
-
       <section id="projects" class="section">
         <h2 class="section__title" data-rock="Greatest hits">Selected work</h2>
         <p class="section__lede">A few things I have built and tested. Each card says what works and what does not yet.</p>
@@ -194,10 +167,10 @@
 
       <!-- SKILLS: a laptop lid covered in stickers. Each sticker is a button; script.js shows
            where it was used (data-used, matched to project titles) and lets visitors move them.
-           Hexagons are tools, round stickers are habits. Add a tool by copying one <li>. -->
+           The big ones are what I use most. Add a tool by copying one <li>. -->
       <section id="skills" class="section">
         <h2 class="section__title" data-rock="The gear">Tools I have used</h2>
-        <p class="section__lede">Only what appears in the projects above. The big stickers are what I use most. Hexagons are tools, round ones are habits.</p>
+        <p class="section__lede">Only what appears in the projects above. The big stickers are what I use most.</p>
         <div class="lid" id="lid">
           <ul class="lid__stickers" id="stickers" aria-label="Tools and practices">
           <li class="big"><button type="button" aria-pressed="false" class="decal decal--hex" data-tool="python" data-group="Language" data-used="lab-report-explainer, urlshort" data-note="Both backends are Python: the lab report parser and the URL shortener." style="--bg:#3776ab;--fg:#ffd43b">
@@ -227,23 +200,11 @@
           <li><button type="button" aria-pressed="false" class="decal decal--hex" data-tool="react" data-group="Front end" data-used="RescueSync" data-note="The maps, charts and alerts on RescueSync's dashboard." style="--bg:#20232a;--fg:#61dafb">
             <span class="decal__cut"><span class="decal__face"><svg class="decal__logo" aria-hidden="true"><use href="#i-react"/></svg><span class="decal__name">React</span></span></span>
           </button></li>
-          <li><button type="button" aria-pressed="false" class="decal decal--hex" data-tool="html" data-group="Front end" data-used="RescueSync, this site" data-note="This page is one HTML file. Every word on it works without JavaScript." style="--bg:#e34f26;--fg:#ffffff">
-            <span class="decal__cut"><span class="decal__face"><svg class="decal__logo" aria-hidden="true"><use href="#i-html"/></svg><span class="decal__name">HTML</span></span></span>
-          </button></li>
-          <li><button type="button" aria-pressed="false" class="decal decal--hex" data-tool="css" data-group="Front end" data-used="RescueSync, this site" data-note="The three styles of this page are one stylesheet that swaps its colours and fonts." style="--bg:#663399;--fg:#ffffff">
-            <span class="decal__cut"><span class="decal__face"><svg class="decal__logo" aria-hidden="true"><use href="#i-css"/></svg><span class="decal__name">CSS</span></span></span>
-          </button></li>
           <li class="big"><button type="button" aria-pressed="false" class="decal decal--round" data-tool="testing" data-group="Practice" data-used="lab-report-explainer, this site" data-note="52 tests on lab-report-explainer, one for every bug I fixed. This page has its own browser and accessibility tests." data-full="Automated testing" style="--bg:#3fe0a5;--fg:#11121a">
             <span class="decal__cut"><span class="decal__face"><svg class="decal__logo" aria-hidden="true"><use href="#i-testing"/></svg><span class="decal__name">Testing</span></span></span>
           </button></li>
           <li class="big"><button type="button" aria-pressed="false" class="decal decal--round" data-tool="pdf" data-group="Practice" data-used="lab-report-explainer" data-note="Rebuilds a table of results from where each word sits on the page, then checks every number." style="--bg:#ffc928;--fg:#11121a">
             <span class="decal__cut"><span class="decal__face"><svg class="decal__logo" aria-hidden="true"><use href="#i-pdf"/></svg><span class="decal__name">PDF parsing</span></span></span>
-          </button></li>
-          <li><button type="button" aria-pressed="false" class="decal decal--hex" data-tool="git" data-group="Practice" data-used="lab-report-explainer, RescueSync, urlshort, this site" data-note="Every project here, one commit at a time." style="--bg:#f03c2e;--fg:#ffffff">
-            <span class="decal__cut"><span class="decal__face"><svg class="decal__logo" aria-hidden="true"><use href="#i-git"/></svg><span class="decal__name">Git</span></span></span>
-          </button></li>
-          <li><button type="button" aria-pressed="false" class="decal decal--hex" data-tool="github" data-group="Practice" data-used="lab-report-explainer, RescueSync, urlshort, this site" data-note="Where all of it lives. The activity chart at the top is pulled from GitHub every day." style="--bg:#181717;--fg:#ffffff">
-            <span class="decal__cut"><span class="decal__face"><svg class="decal__logo" aria-hidden="true"><use href="#i-github"/></svg><span class="decal__name">GitHub</span></span></span>
           </button></li>
           </ul>
         </div>
@@ -279,6 +240,26 @@
         </ul>
       </section>
 
+      <!-- ACTIVITY: GitHub contributions, refreshed daily by .github/workflows/deploy.yml.
+           script.js draws it from data/contributions.json, which only exists on the live site.
+           It sits below the work on purpose: the strongest evidence goes first. -->
+      <section id="activity" class="section">
+        <h2 class="section__title" data-rock="On tour">Commit activity</h2>
+        <div class="activity" id="activityCard">
+          <div class="activity__bar"><span class="activity__dot" aria-hidden="true"></span><b>KrBeTect2025</b> / contributions <span>synced daily from GitHub</span></div>
+          <p class="activity__summary" id="activitySummary">
+            My full contribution history is on GitHub.
+          </p>
+          <div class="activity__scroll" id="activityScroll" tabindex="0">
+            <div class="activity__grid" id="activityGrid" role="img" aria-label="GitHub contribution chart"></div>
+          </div>
+          <div class="activity__foot">
+            <span class="activity__legend" aria-hidden="true">Less <i data-l="0"></i><i data-l="1"></i><i data-l="2"></i><i data-l="3"></i><i data-l="4"></i> More</span>
+            <a href="https://github.com/KrBeTect2025" target="_blank" rel="noopener" aria-describedby="newTab">Full profile on GitHub</a>
+          </div>
+        </div>
+      </section>
+
       <section id="contact" class="section contact">
         <h2 class="contact__big" data-rock="Book me." data-letters>Let's talk.</h2>
         <!-- TODO(you): put your real email address in both places below. -->
@@ -290,17 +271,23 @@
         </p>
       </section>
 
-      <!-- A hint for curious visitors: the same page comes in three styles. -->
+      <!-- Extras for curious visitors, kept at the end so they never compete with the work. -->
       <section class="style-hint" aria-labelledby="styleHintTitle">
-        <p class="style-hint__kicker">Want to see more?</p>
-        <h2 id="styleHintTitle">This page comes in three styles.</h2>
-        <p>Same content, different stage. Pick one:</p>
-        <div class="style-hint__choices" id="styleChoices">
-          <button type="button" data-style="poster">Poster</button>
-          <button type="button" data-style="rock">Rockstar</button>
-          <button type="button" data-style="plain">Plain</button>
+        <h2 class="style-hint__kicker" id="styleHintTitle">Extras</h2>
+        <div class="style-hint__row">
+          <p>Same page, different stage:</p>
+          <div class="style-hint__choices" id="styleChoices">
+            <button type="button" data-style="poster">Poster</button>
+            <button type="button" data-style="rock">Rockstar</button>
+            <button type="button" data-style="plain">Plain</button>
+          </div>
         </div>
-        <p class="style-hint__note">You can also use the Style button under my name, or press <kbd>/</kbd> and type <code>style</code>. Your choice is remembered.</p>
+        <div class="style-hint__row">
+          <button type="button" class="secrets" id="secretsBtn" aria-haspopup="dialog">
+            Found <b id="secretCount">0</b> of <b id="secretTotal">6</b> secrets
+          </button>
+          <p class="style-hint__note">Press <kbd>/</kbd> to search the page. Your style is remembered.</p>
+        </div>
       </section>
 
       <footer class="footer">

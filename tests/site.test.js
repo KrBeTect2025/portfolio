@@ -119,7 +119,7 @@ function assert(c, m) { if (!c) throw new Error(m); }
   await test("palette: / opens a modal dialog with focus in the search box, Esc closes and returns focus", async () => {
     const page = await newPage(); await page.goto(BASE);
     assert(await page.isVisible("#paletteTrigger"), "pill not visible");
-    await page.focus("#modeToggle"); await page.keyboard.press("/");
+    await page.focus("#secretsBtn"); await page.keyboard.press("/");
     const d = await page.evaluate(() => ({
       role: document.getElementById("palette").getAttribute("role"), modal: document.getElementById("palette").getAttribute("aria-modal"),
       focus: document.activeElement.id, inert: document.querySelector(".layout").inert, overlay: document.getElementById("paletteOverlay").classList.contains("is-open")
@@ -128,7 +128,7 @@ function assert(c, m) { if (!c) throw new Error(m); }
     assert(d.focus === "paletteInput" && d.inert && d.overlay, JSON.stringify(d));
     await page.keyboard.press("Escape");
     const after = await page.evaluate(() => ({ focus: document.activeElement.id, inert: document.querySelector(".layout").inert, role: document.getElementById("palette").getAttribute("role") }));
-    assert(after.focus === "modeToggle" && !after.inert && after.role === null, JSON.stringify(after));
+    assert(after.focus === "secretsBtn" && !after.inert && after.role === null, JSON.stringify(after));
     assert(!page.errors.length, page.errors.join("|"));
     await page.context().close();
   });
@@ -248,11 +248,12 @@ function assert(c, m) { if (!c) throw new Error(m); }
   });
 
   // ---------- Styles ----------
-  await test("style button cycles poster > rock > plain and remembers", async () => {
+  await test("style choices switch the style, mark the current one and remember it", async () => {
     const page = await newPage(); await page.goto(BASE); await page.evaluate(() => localStorage.clear()); await page.reload();
-    const seq = [];
-    for (let i = 0; i < 3; i++) { seq.push(await page.textContent("#modeToggle")); await page.click("#modeToggle"); await page.waitForTimeout(150); }
-    assert(seq.join("|") === "Style: Poster|Style: Rockstar|Style: Plain", seq.join("|"));
+    const pressed = () => page.$eval('#styleChoices [aria-pressed="true"]', b => b.dataset.style);
+    assert(await pressed() === "poster", "poster not marked");
+    await page.click('#styleChoices [data-style="plain"]'); await page.waitForTimeout(150);
+    assert(await pressed() === "plain" && await page.evaluate(() => document.body.classList.contains("plain")), "plain not applied");
     await page.click('#styleChoices [data-style="rock"]'); await page.waitForTimeout(150); await page.reload();
     assert(await page.evaluate(() => document.body.classList.contains("rock")), "not remembered");
     assert(await page.textContent(".section__title") !== "Commit activity", "rock text swap missing");
@@ -270,7 +271,7 @@ function assert(c, m) { if (!c) throw new Error(m); }
     for (let i = 0; i < 5; i++) await page.click("#name");
     await page.focus("body");
     for (const k of ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"]) await page.keyboard.press(k);
-    await page.focus('.decal[data-tool="git"]'); await page.keyboard.press("ArrowRight");
+    await page.focus('.decal[data-tool="redis"]'); await page.keyboard.press("ArrowRight");
     assert(await page.textContent("#secretCount") === "6", "count " + await page.textContent("#secretCount"));
     await page.reload();
     assert(await page.textContent("#secretCount") === "6", "not persisted");
@@ -281,7 +282,7 @@ function assert(c, m) { if (!c) throw new Error(m); }
   await test("stickers: every one has a logo and a name, also without JavaScript", async () => {
     const page = await newPage({ javaScriptEnabled: false }); await page.goto(BASE);
     const d = await page.$$eval(".decal", els => els.map(e => ({ name: e.textContent.trim(), logo: !!document.querySelector(e.querySelector("use").getAttribute("href")) })));
-    assert(d.length === 15 && d.every(x => x.name && x.logo), JSON.stringify(d.filter(x => !x.name || !x.logo)));
+    assert(d.length === 11 && d.every(x => x.name && x.logo), JSON.stringify(d.filter(x => !x.name || !x.logo)));
     const cards = await page.$$eval(".stats .stack-logos use", u => u.every(x => document.querySelector(x.getAttribute("href"))));
     assert(cards, "a project card logo points at a missing symbol");
     await page.context().close();
@@ -320,8 +321,8 @@ function assert(c, m) { if (!c) throw new Error(m); }
   });
   await test("stickers: Plain keeps them in a straight grid that does not move", async () => {
     const page = await newPage(); await page.goto(BASE); await setStyle(page, "plain");
-    await page.focus('.decal[data-tool="git"]'); await page.keyboard.press("ArrowRight"); await page.waitForTimeout(400);
-    const t = await page.$eval('.decal[data-tool="git"]', d => getComputedStyle(d).translate + " " + getComputedStyle(d).rotate);
+    await page.focus('.decal[data-tool="redis"]'); await page.keyboard.press("ArrowRight"); await page.waitForTimeout(400);
+    const t = await page.$eval('.decal[data-tool="redis"]', d => getComputedStyle(d).translate + " " + getComputedStyle(d).rotate);
     assert(/^(none|0px) (none|0deg)$/.test(t) && await page.textContent("#secretCount") === "0", t);
     await page.context().close();
   });
@@ -397,9 +398,9 @@ function assert(c, m) { if (!c) throw new Error(m); }
     assert(role === "I build backend APIs and ML tools that turn messy documents into data you can check.", role);
     await page.context().close();
   });
-  await test("style switch from the button changes the theme colour too", async () => {
+  await test("style switch from the choices changes the theme colour too", async () => {
     const page = await newPage(); await page.goto(BASE); await page.evaluate(() => localStorage.clear()); await page.reload();
-    await page.click("#modeToggle"); await page.waitForTimeout(900);
+    await page.click('#styleChoices [data-style="rock"]'); await page.waitForTimeout(900);
     const c = await page.$eval('meta[name="theme-color"]', m => m.content);
     assert(c === "#0d0b0b" && await page.evaluate(() => document.body.classList.contains("rock")), c);
     assert(!page.errors.length, page.errors.join("|"));
@@ -452,6 +453,18 @@ function assert(c, m) { if (!c) throw new Error(m); }
     const email = await page.textContent(".contact__email a");
     assert(clip === email.trim(), clip);
     assert(await page.textContent("#copyEmail") === "Copied", "no feedback");
+    await page.context().close();
+  });
+  await test("hero holds only the pitch and the two ways to act; the work comes before the commit chart", async () => {
+    const page = await newPage(); await page.goto(BASE);
+    const d = await page.evaluate(() => ({
+      game: !!document.querySelector(".side #secretsBtn, .side #modeToggle"),
+      nav: [...document.querySelectorAll(".nav a")].map(a => a.hash),
+      order: [...document.querySelectorAll("main > section[id]")].map(s => s.id)
+    }));
+    assert(!d.game, "secrets or style control still in the hero");
+    assert(d.nav.join() === "#projects,#skills,#about", d.nav.join());
+    assert(d.order.indexOf("projects") < d.order.indexOf("activity"), d.order.join());
     await page.context().close();
   });
   await test("nav marks the section being read", async () => {
