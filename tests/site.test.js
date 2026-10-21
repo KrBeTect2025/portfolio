@@ -1,4 +1,4 @@
-// End-to-end checks for the portfolio: terminal, styles, secrets, chart, layout and accessibility.
+// End-to-end checks for the portfolio: command palette, styles, secrets, chart, layout and accessibility.
 // Setup once:  cd tests && npm install && npx playwright install chromium
 // Run:         npm test            (from the tests folder)
 // It serves the site itself and uses tests/sample-contributions.json as chart data.
@@ -50,9 +50,11 @@ function assert(c, m) { if (!c) throw new Error(m); }
     await page.evaluate(s => localStorage.setItem("style", JSON.stringify(s)), s);
     await page.reload(); await page.waitForTimeout(150);
   }
-  async function termRun(page, cmd) {
-    await page.fill("#termInput", cmd); await page.press("#termInput", "Enter");
-    return page.$eval("#termOut", el => el.innerText);
+  // Opens the palette, types a query and returns the visible option labels.
+  async function palette(page, query) {
+    if (!(await page.$(".cmdk.is-open"))) { await page.focus("body"); await page.keyboard.press("/"); }
+    await page.fill("#paletteInput", query || "");
+    return page.$$eval('#paletteList [role="option"] .cmdk__label', o => o.map(x => x.textContent));
   }
 
   // ---------- Load, errors, overflow ----------
@@ -113,63 +115,145 @@ function assert(c, m) { if (!c) throw new Error(m); }
     await page.context().close();
   });
 
-  // ---------- Terminal ----------
-  await test("terminal commands answer correctly", async () => {
+  // ---------- Command palette ----------
+  await test("palette: / opens a modal dialog with focus in the search box, Esc closes and returns focus", async () => {
     const page = await newPage(); await page.goto(BASE);
-    const checks = [
-      ["help", /contributions/], ["whoami", /Backend and ML/], ["ls", /lab-report-explainer\s+RescueSync\s+urlshort/],
-      ["cat lab-report-explainer", /tests: 52 passing/], ["cat LAB-REPORT-EXPLAINER", /tests: 52 passing/],
-      ["open urlshort", /github\.com\/KrBeTect2025\/urlshort/], ["curl /api/projects", /"name": "RescueSync"/],
-      ["skills", /Backend: FastAPI/], ["contact", /email:/], ["contributions", /longest streak/],
-      ["secrets", /Found \d of 5/], ["nope", /command not found/], ["cat nothing", /no such project/],
-      ["style rockstar", /Rockstar/], ["style plain", /Plain/]
-    ];
-    const fails = [];
-    for (const [c, re] of checks) {
-      await page.$eval("#termOut", e => e.textContent = "");
-      const out = await termRun(page, c);
-      if (!re.test(out)) fails.push(`${c} -> ${out.slice(0, 120).replace(/\n/g, " / ")}`);
-    }
-    await termRun(page, "clear");
-    assert((await page.$eval("#termOut", e => e.textContent)) === "", "clear left text");
+    assert(await page.isVisible("#paletteTrigger"), "pill not visible");
+    await page.focus("#modeToggle"); await page.keyboard.press("/");
+    const d = await page.evaluate(() => ({
+      role: document.getElementById("palette").getAttribute("role"), modal: document.getElementById("palette").getAttribute("aria-modal"),
+      focus: document.activeElement.id, inert: document.querySelector(".layout").inert, overlay: document.getElementById("paletteOverlay").classList.contains("is-open")
+    }));
+    assert(d.role === "dialog" && d.modal === "true", JSON.stringify(d));
+    assert(d.focus === "paletteInput" && d.inert && d.overlay, JSON.stringify(d));
+    await page.keyboard.press("Escape");
+    const after = await page.evaluate(() => ({ focus: document.activeElement.id, inert: document.querySelector(".layout").inert, role: document.getElementById("palette").getAttribute("role") }));
+    assert(after.focus === "modeToggle" && !after.inert && after.role === null, JSON.stringify(after));
     assert(!page.errors.length, page.errors.join("|"));
-    assert(!fails.length, fails.join(" || "));
     await page.context().close();
   });
-  await test("terminal: tab completion and history", async () => {
+  await test("palette: Ctrl+K toggles it, the pill and the overlay open and close it", async () => {
     const page = await newPage(); await page.goto(BASE);
-    await page.fill("#termInput", "wh"); await page.press("#termInput", "Tab");
-    assert(await page.inputValue("#termInput") === "whoami ", "tab cmd: " + await page.inputValue("#termInput"));
-    await page.fill("#termInput", "cat lab"); await page.press("#termInput", "Tab");
-    assert(await page.inputValue("#termInput") === "cat lab-report-explainer", "tab project: " + await page.inputValue("#termInput"));
-    await page.press("#termInput", "Enter");
-    await termRun(page, "ls");
-    await page.press("#termInput", "ArrowUp"); await page.press("#termInput", "ArrowUp");
-    assert(await page.inputValue("#termInput") === "cat lab-report-explainer", "history");
+    await page.keyboard.press("Control+k"); assert(await page.$(".cmdk.is-open"), "ctrl+k open");
+    await page.keyboard.press("Control+k"); assert(!(await page.$(".cmdk.is-open")), "ctrl+k close");
+    await page.click("#paletteTrigger"); assert(await page.$(".cmdk.is-open"), "pill open");
+    await page.mouse.click(20, 20); await page.waitForTimeout(50);
+    assert(!(await page.$(".cmdk.is-open")), "overlay click did not close");
     await page.context().close();
   });
-  await test("terminal: chips run commands and backtick focuses input", async () => {
-    const page = await newPage(); await page.goto(BASE);
-    await page.click('#termChips button[data-cmd="ls"]');
-    assert(/\$ ls/.test(await page.textContent("#termOut")), "chip");
-    await page.focus("body"); await page.keyboard.press("`");
-    assert(await page.evaluate(() => document.activeElement.id) === "termInput", "backtick");
+  await test("palette: lists actions, sections, projects and outside links from the page", async () => {
+    const page = await newPage(); await page.goto(BASE); await page.waitForTimeout(300);
+    const all = await palette(page, "");
+    for (const want of ["Say hi", "Switch to Rockstar", "Switch to Plain", "Secrets", "Activity", "Projects", "Skills", "About", "Contact",
+      "lab-report-explainer", "RescueSync", "urlshort", "GitHub", "LinkedIn", "RescueSync demo"]) assert(all.includes(want), "missing " + want + " in " + all.join(","));
+    assert(!all.includes("Switch to Poster"), "offers the current style");
+    assert(!all.includes("Permission denied"), "hidden item showing");
+    const groups = await page.$$eval(".cmdk__group", g => g.map(x => x.textContent));
+    assert(groups.join("|") === "Quick actions|Sections|Projects|Elsewhere", groups.join("|"));
     await page.context().close();
   });
-  await test("terminal: open links and whitespace handling", async () => {
+  await test("palette: typing filters, and an empty result says so", async () => {
     const page = await newPage(); await page.goto(BASE);
-    const out = await termRun(page, "   cat    urlshort   ");
-    assert(/Small learning project/.test(out), "extra spaces broke cat: " + out.slice(-200));
+    const r = await palette(page, "rock");
+    assert(r.length === 1 && r[0] === "Switch to Rockstar", r.join(","));
+    const two = await palette(page, "  SOURCE  url ");
+    assert(two.length === 0 || two.every(x => /url/i.test(x)), two.join(","));
+    assert(await page.isVisible(".cmdk__empty") || two.length, "no empty state");
+    await palette(page, "zzzz");
+    assert(/Nothing here/.test(await page.textContent(".cmdk__empty")), "empty text");
+    assert(/No results/.test(await page.textContent("#paletteStatus")), "status not announced");
     await page.context().close();
+  });
+  await test("palette: arrow keys move the selection and wrap, Enter runs it", async () => {
+    const page = await newPage(); await page.goto(BASE); await page.evaluate(() => localStorage.clear()); await page.reload();
+    await palette(page, "");
+    const sel = () => page.evaluate(() => ({ ad: document.getElementById("paletteInput").getAttribute("aria-activedescendant"), n: document.querySelectorAll('[aria-selected="true"]').length }));
+    let s1 = await sel(); assert(s1.ad === "palette-o0" && s1.n === 1, JSON.stringify(s1));
+    await page.keyboard.press("ArrowUp");
+    const last = await page.$$eval('[role="option"]', o => o.length - 1);
+    s1 = await sel(); assert(s1.ad === "palette-o" + last, "no wrap: " + JSON.stringify(s1));
+    await page.keyboard.press("ArrowDown"); await page.keyboard.press("ArrowDown");
+    s1 = await sel(); assert(s1.ad === "palette-o1", JSON.stringify(s1));
+    const hl = await page.$eval("#paletteHl", e => getComputedStyle(e).opacity);
+    assert(hl === "1", "highlight hidden");
+    await palette(page, "plain"); await page.keyboard.press("Enter"); await page.waitForTimeout(900);
+    assert(await page.evaluate(() => document.body.classList.contains("plain")), "Enter did not switch style");
+    assert(!(await page.$(".cmdk.is-open")), "still open");
+    assert(await page.textContent("#secretCount") === "1", "first jump secret");
+    await page.context().close();
+  });
+  await test("palette: jumping to a section scrolls there and moves focus", async () => {
+    const page = await newPage(); await page.goto(BASE);
+    await palette(page, "skills tools"); await page.keyboard.press("Enter"); await page.waitForTimeout(1200);
+    const r = await page.evaluate(() => ({ top: Math.round(document.getElementById("skills").getBoundingClientRect().top), focus: document.activeElement.id }));
+    assert(Math.abs(r.top) < 60 && r.focus === "skills", JSON.stringify(r));
+    await palette(page, "urlshort"); await page.keyboard.press("Enter"); await page.waitForTimeout(100);
+    assert(await page.evaluate(() => document.activeElement.classList.contains("project")), "project card not focused");
+    await page.context().close();
+  });
+  await test("palette: outside links open in a new tab", async () => {
+    const page = await newPage(); await page.goto(BASE);
+    await palette(page, "github");
+    const [popup] = await Promise.all([page.context().waitForEvent("page"), page.keyboard.press("Enter")]);
+    assert(/github\.com\/KrBeTect2025/.test(popup.url()) || popup.url() === "about:blank", popup.url());
+    assert(!(await page.$(".cmdk.is-open")), "still open");
+    await page.context().close();
+  });
+  await test("palette: Tab stays inside the dialog", async () => {
+    const page = await newPage(); await page.goto(BASE); await palette(page, "");
+    const seen = [];
+    for (let i = 0; i < 4; i++) { await page.keyboard.press("Tab"); seen.push(await page.evaluate(() => document.activeElement.id)); }
+    assert(seen.join(",") === "paletteClose,paletteInput,paletteClose,paletteInput", seen.join(","));
+    await page.keyboard.press("Shift+Tab");
+    assert(await page.evaluate(() => !!document.activeElement.closest("#palette")), "escaped on Shift+Tab");
+    await page.context().close();
+  });
+  await test("palette: / typed inside a text field does not open it", async () => {
+    const page = await newPage(); await page.goto(BASE); await palette(page, "a/b");
+    assert(await page.inputValue("#paletteInput") === "a/b", "slash swallowed in the search box");
+    await page.keyboard.press("Escape");
+    await page.evaluate(() => { const i = document.createElement("input"); i.id = "probe"; document.body.appendChild(i); });
+    await page.focus("#probe"); await page.keyboard.press("/");
+    assert(!(await page.$(".cmdk.is-open")), "opened while typing");
+    await page.context().close();
+  });
+  await test("palette: secrets view lists all five with hints and Esc goes back", async () => {
+    const page = await newPage(); await page.goto(BASE);
+    await page.click("#secretsBtn");
+    const rows = await page.$$eval('[role="option"] .cmdk__detail', o => o.map(x => x.textContent));
+    assert(rows.length === 6, "rows " + rows.length);
+    assert(/Found 0 of 5/.test(await page.textContent("#paletteList")), "count missing");
+    await page.keyboard.press("Escape");
+    assert(await page.$(".cmdk.is-open") && (await palette(page, "")).includes("Say hi"), "Esc did not go back to the main list");
+    await page.keyboard.press("Escape");
+    assert(!(await page.$(".cmdk.is-open")), "second Esc did not close");
+    await page.context().close();
+  });
+  await test("palette: without JavaScript the pill is not shown", async () => {
+    const page = await newPage({ javaScriptEnabled: false }); await page.goto(BASE);
+    assert(!(await page.isVisible("#palette")) && !(await page.isVisible("#paletteOverlay")), "dead pill on the page");
+    await page.context().close();
+  });
+  await test("palette: the pill types suggestions, but sits still with reduced motion", async () => {
+    const page = await newPage(); await page.goto(BASE);
+    const a = await page.textContent("#paletteTyped"); await page.waitForTimeout(3000);
+    const b = await page.textContent("#paletteTyped");
+    assert(a !== b, "pill text never changes");
+    const calm = await newPage({ reducedMotion: "reduce" }); await calm.goto(BASE);
+    const c = await calm.textContent("#paletteTyped"); await calm.waitForTimeout(3000);
+    assert(c === "Explore my projects" && await calm.textContent("#paletteTyped") === c, "moved with reduced motion");
+    const t = await calm.$eval(".cmdk", e => getComputedStyle(e).transitionDuration);
+    assert(/^0s(, 0s)*$/.test(t), "transitions on: " + t);
+    await page.context().close(); await calm.context().close();
   });
 
   // ---------- Styles ----------
   await test("style button cycles poster > rock > plain and remembers", async () => {
     const page = await newPage(); await page.goto(BASE); await page.evaluate(() => localStorage.clear()); await page.reload();
     const seq = [];
-    for (let i = 0; i < 3; i++) { seq.push(await page.textContent("#modeToggle")); await page.click("#modeToggle"); }
+    for (let i = 0; i < 3; i++) { seq.push(await page.textContent("#modeToggle")); await page.click("#modeToggle"); await page.waitForTimeout(150); }
     assert(seq.join("|") === "Style: Poster|Style: Rockstar|Style: Plain", seq.join("|"));
-    await page.click('#styleChoices [data-style="rock"]'); await page.reload();
+    await page.click('#styleChoices [data-style="rock"]'); await page.waitForTimeout(150); await page.reload();
     assert(await page.evaluate(() => document.body.classList.contains("rock")), "not remembered");
     assert(await page.textContent(".section__title") !== "Commit activity", "rock text swap missing");
     await page.context().close();
@@ -178,8 +262,10 @@ function assert(c, m) { if (!c) throw new Error(m); }
   // ---------- Secrets ----------
   await test("all five secrets unlock and persist", async () => {
     const page = await newPage(); await page.goto(BASE); await page.evaluate(() => localStorage.clear()); await page.reload();
-    await termRun(page, "ls");
-    await termRun(page, "sudo");
+    await palette(page, "projects"); await page.keyboard.press("Enter"); await page.waitForTimeout(100);
+    await palette(page, "sudo"); await page.keyboard.press("Enter");
+    assert(/Permission denied/.test(await page.textContent("#paletteList")), "sudo item missing");
+    await page.keyboard.press("Escape");
     await page.click("#loreDetails summary");
     for (let i = 0; i < 5; i++) await page.click("#name");
     await page.focus("body");
@@ -204,7 +290,7 @@ function assert(c, m) { if (!c) throw new Error(m); }
     for (const vp of [{ width: 1366, height: 900 }, { width: 390, height: 844 }]) {
       await test(`axe accessibility scan: ${style} ${vp.width}px`, async () => {
         const page = await newPage({ viewport: vp }); await page.goto(BASE); await setStyle(page, style);
-        await page.waitForTimeout(700);
+        await page.waitForTimeout(1300); // let entrance animations settle so contrast is measured on the final colours
         await page.addScriptTag({ content: AXE });
         const r = await page.evaluate(async () => {
           const res = await axe.run(document, { runOnly: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"] });
@@ -218,6 +304,47 @@ function assert(c, m) { if (!c) throw new Error(m); }
       });
     }
   }
+  for (const style of ["poster", "rock", "plain"]) {
+    await test(`axe accessibility scan with the palette open: ${style}`, async () => {
+      const page = await newPage(); await page.goto(BASE); await setStyle(page, style);
+      await palette(page, ""); await page.waitForTimeout(700);
+      await page.addScriptTag({ content: AXE });
+      const r = await page.evaluate(async () => {
+        const res = await axe.run(document, { runOnly: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"] });
+        return res.violations.map(v => ({ id: v.id, impact: v.impact, n: v.nodes.length, help: v.help, t: v.nodes.slice(0, 4).map(n => n.target.join(" ") + " :: " + (n.failureSummary || "").split("\n").slice(1, 2).join("")) }));
+      });
+      const serious = r.filter(v => v.impact === "serious" || v.impact === "critical");
+      r.filter(v => !serious.includes(v)).forEach(v => note("a11y palette " + style, `${v.id} (${v.impact}, ${v.n}): ${v.help}`));
+      assert(!serious.length, serious.map(v => `${v.id}(${v.n}): ${v.t.join(" ; ")}`).join(" || "));
+      await page.context().close();
+    });
+  }
+  await test("animations: cards reveal on scroll and the contact line reads as words", async () => {
+    const page = await newPage(); await page.goto(BASE); await page.waitForTimeout(200);
+    assert(await page.$("html.motion"), "motion class missing");
+    const before = await page.$eval(".contact", e => getComputedStyle(e).opacity);
+    await page.evaluate(() => document.getElementById("contact").scrollIntoView({ behavior: "instant" })); await page.waitForTimeout(1500);
+    const after = await page.$eval(".contact", e => getComputedStyle(e).opacity);
+    assert(before === "0" && after === "1", before + " -> " + after);
+    const h = await page.evaluate(() => {
+      const el = document.querySelector(".contact__big");
+      return { sr: el.querySelector(".sr-only").textContent, letters: el.querySelectorAll(".l").length, hidden: el.querySelector("[aria-hidden]") !== null };
+    });
+    assert(h.sr === "Let's talk." && h.letters === 10 && h.hidden, JSON.stringify(h));
+    await setStyle(page, "rock");
+    assert(await page.$eval(".contact__big .sr-only", e => e.textContent) === "Book me.", "rock swap lost the letters");
+    const role = await page.$eval(".role", e => e.textContent.replace(/\s+/g, " ").trim());
+    assert(role === "Backend and ML developer. I build APIs that turn messy documents into data you can check.", role);
+    await page.context().close();
+  });
+  await test("style switch from the button changes the theme colour too", async () => {
+    const page = await newPage(); await page.goto(BASE); await page.evaluate(() => localStorage.clear()); await page.reload();
+    await page.click("#modeToggle"); await page.waitForTimeout(900);
+    const c = await page.$eval('meta[name="theme-color"]', m => m.content);
+    assert(c === "#0d0b0b" && await page.evaluate(() => document.body.classList.contains("rock")), c);
+    assert(!page.errors.length, page.errors.join("|"));
+    await page.context().close();
+  });
   await test("touch targets are at least 24px (WCAG 2.2 AA) on a phone", async () => {
     const page = await newPage({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }); await page.goto(BASE);
     const small = await page.$$eval("a, button, summary, input", els => els.filter(e => {
@@ -228,11 +355,13 @@ function assert(c, m) { if (!c) throw new Error(m); }
     assert(!small.length, small.join(", "));
     await page.context().close();
   });
-  await test("reduced motion: ticker and slam stop", async () => {
+  await test("reduced motion: ticker, slam and entrance animations stop", async () => {
     const page = await newPage({ reducedMotion: "reduce" }); await page.goto(BASE); await setStyle(page, "rock");
     const a = await page.$eval(".ticker__track", e => getComputedStyle(e).animationName);
     const b = await page.$eval(".name", e => getComputedStyle(e).animationName);
     assert(a === "none" && b === "none", a + " " + b);
+    const hidden = await page.$$eval(".project, .contact, .skill-group", els => els.filter(e => getComputedStyle(e).opacity !== "1").length);
+    assert(!hidden && !(await page.$("html.motion")) && !(await page.$(".role .w")), "content waits for an animation");
     await page.context().close();
   });
   await test("without JavaScript every section's content is still readable", async () => {
@@ -246,7 +375,6 @@ function assert(c, m) { if (!c) throw new Error(m); }
 
   await test("outside links open in a new tab, in-page links do not", async () => {
     const page = await newPage(); await page.goto(BASE);
-    await termRun(page, "open urlshort");
     const bad = await page.$$eval("a[href]", as => as.filter(a => {
       const outside = /^https?:/.test(a.getAttribute("href"));
       const newTab = a.target === "_blank" && /noopener/.test(a.rel) && a.getAttribute("aria-describedby") === "newTab";
@@ -254,13 +382,6 @@ function assert(c, m) { if (!c) throw new Error(m); }
     }).map(a => a.getAttribute("href")));
     assert(!bad.length, bad.join(", "));
     assert(await page.$("#newTab"), "missing the new-tab description");
-    await page.context().close();
-  });
-  await test("terminal: Run button submits the command", async () => {
-    const page = await newPage({ viewport: { width: 390, height: 844 } }); await page.goto(BASE);
-    await page.fill("#termInput", "whoami"); await page.click(".term__run");
-    assert(/\$ whoami/.test(await page.textContent("#termOut")), "run button");
-    assert(await page.inputValue("#termInput") === "", "input not cleared");
     await page.context().close();
   });
   await test("copy email button copies the address", async () => {
