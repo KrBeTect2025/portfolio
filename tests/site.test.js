@@ -217,12 +217,12 @@ function assert(c, m) { if (!c) throw new Error(m); }
     assert(!(await page.$(".cmdk.is-open")), "opened while typing");
     await page.context().close();
   });
-  await test("palette: secrets view lists all five with hints and Esc goes back", async () => {
+  await test("palette: secrets view lists all six with hints and Esc goes back", async () => {
     const page = await newPage(); await page.goto(BASE);
     await page.click("#secretsBtn");
     const rows = await page.$$eval('[role="option"] .cmdk__detail', o => o.map(x => x.textContent));
-    assert(rows.length === 6, "rows " + rows.length);
-    assert(/Found 0 of 5/.test(await page.textContent("#paletteList")), "count missing");
+    assert(rows.length === 7, "rows " + rows.length);
+    assert(/Found 0 of 6/.test(await page.textContent("#paletteList")), "count missing");
     await page.keyboard.press("Escape");
     assert(await page.$(".cmdk.is-open") && (await palette(page, "")).includes("Say hi"), "Esc did not go back to the main list");
     await page.keyboard.press("Escape");
@@ -260,7 +260,7 @@ function assert(c, m) { if (!c) throw new Error(m); }
   });
 
   // ---------- Secrets ----------
-  await test("all five secrets unlock and persist", async () => {
+  await test("all six secrets unlock and persist", async () => {
     const page = await newPage(); await page.goto(BASE); await page.evaluate(() => localStorage.clear()); await page.reload();
     await palette(page, "projects"); await page.keyboard.press("Enter"); await page.waitForTimeout(100);
     await palette(page, "sudo"); await page.keyboard.press("Enter");
@@ -270,9 +270,69 @@ function assert(c, m) { if (!c) throw new Error(m); }
     for (let i = 0; i < 5; i++) await page.click("#name");
     await page.focus("body");
     for (const k of ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"]) await page.keyboard.press(k);
-    assert(await page.textContent("#secretCount") === "5", "count " + await page.textContent("#secretCount"));
+    await page.focus('.decal[data-tool="git"]'); await page.keyboard.press("ArrowRight");
+    assert(await page.textContent("#secretCount") === "6", "count " + await page.textContent("#secretCount"));
     await page.reload();
-    assert(await page.textContent("#secretCount") === "5", "not persisted");
+    assert(await page.textContent("#secretCount") === "6", "not persisted");
+    await page.context().close();
+  });
+
+  // ---------- Stickers ----------
+  await test("stickers: every one has a logo and a name, also without JavaScript", async () => {
+    const page = await newPage({ javaScriptEnabled: false }); await page.goto(BASE);
+    const d = await page.$$eval(".decal", els => els.map(e => ({ name: e.textContent.trim(), logo: !!document.querySelector(e.querySelector("use").getAttribute("href")) })));
+    assert(d.length === 15 && d.every(x => x.name && x.logo), JSON.stringify(d.filter(x => !x.name || !x.logo)));
+    const cards = await page.$$eval(".stats .stack-logos use", u => u.every(x => document.querySelector(x.getAttribute("href"))));
+    assert(cards, "a project card logo points at a missing symbol");
+    await page.context().close();
+  });
+  await test("stickers: pressing one says where it was used and links to the project", async () => {
+    const page = await newPage(); await page.goto(BASE);
+    await page.click('.decal[data-tool="redis"]');
+    assert(await page.getAttribute('.decal[data-tool="redis"]', "aria-pressed") === "true", "not pressed");
+    assert(await page.textContent("#decalName") === "Redis" && /cache/.test(await page.textContent("#decalNote")), "card text");
+    await page.click("#decalUsed button"); await page.waitForTimeout(1000);
+    const top = await page.evaluate(() => Math.round([...document.querySelectorAll(".project h3")].find(h => h.textContent === "urlshort").closest(".project").getBoundingClientRect().top));
+    assert(Math.abs(top) < 60, "did not jump to urlshort: " + top);
+    await page.click('.decal[data-tool="javascript"]');
+    const a = await page.$eval("#decalUsed a", a => ({ href: a.href, t: a.target }));
+    assert(/github\.com\/KrBeTect2025\/portfolio/.test(a.href) && a.t === "_blank", JSON.stringify(a));
+    await page.click('.decal[data-tool="javascript"]');
+    assert(await page.isHidden("#decalBody") && !(await page.$('.decal[aria-pressed="true"]')), "second press did not let go");
+    await page.context().close();
+  });
+  await test("stickers: dragging moves one inside the lid, unlocks a secret, and tidy puts it back", async () => {
+    const page = await newPage(); await page.goto(BASE); await page.evaluate(() => localStorage.clear()); await page.reload();
+    await page.evaluate(() => document.getElementById("lid").scrollIntoView({ behavior: "instant" })); await page.waitForTimeout(1500);
+    const s = await page.$('.decal[data-tool="python"]'); const b = await s.boundingBox();
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await page.mouse.down();
+    await page.mouse.move(b.x + b.width / 2 + 60, b.y + b.height / 2 + 30, { steps: 5 });
+    await page.mouse.move(b.x - 2000, b.y + b.height / 2 + 30, { steps: 5 }); await page.mouse.up();
+    const r = await page.evaluate(() => {
+      const l = document.getElementById("lid").getBoundingClientRect(), d = document.querySelector('.decal[data-tool="python"]');
+      return { left: d.getBoundingClientRect().left - l.left, pressed: d.getAttribute("aria-pressed") };
+    });
+    assert(r.left >= -8 && r.pressed === "false", "left the lid or counted as a press: " + JSON.stringify(r));
+    assert(await page.textContent("#secretCount") === "1" && await page.isVisible("#decalTidy"), "no secret or no tidy button");
+    await page.click("#decalTidy");
+    assert(await page.$eval('.decal[data-tool="python"]', d => d.style.getPropertyValue("--dx")) === "0px", "tidy did not reset");
+    await page.context().close();
+  });
+  await test("stickers: Plain keeps them in a straight grid that does not move", async () => {
+    const page = await newPage(); await page.goto(BASE); await setStyle(page, "plain");
+    await page.focus('.decal[data-tool="git"]'); await page.keyboard.press("ArrowRight"); await page.waitForTimeout(400);
+    const t = await page.$eval('.decal[data-tool="git"]', d => getComputedStyle(d).translate + " " + getComputedStyle(d).rotate);
+    assert(/^(none|0px) (none|0deg)$/.test(t) && await page.textContent("#secretCount") === "0", t);
+    await page.context().close();
+  });
+  await test("palette: typing a tool name finds its sticker and presses it", async () => {
+    const page = await newPage(); await page.goto(BASE);
+    assert(!(await palette(page, "")).includes("Redis"), "tools listed before typing");
+    const r = await palette(page, "redis");
+    assert(r[0] === "Redis", r.join(","));
+    await page.keyboard.press("Enter"); await page.waitForTimeout(1000);
+    const st = await page.evaluate(() => ({ f: document.activeElement.dataset.tool, p: document.activeElement.getAttribute("aria-pressed") }));
+    assert(st.f === "redis" && st.p === "true", JSON.stringify(st));
     await page.context().close();
   });
 
@@ -360,7 +420,7 @@ function assert(c, m) { if (!c) throw new Error(m); }
     const a = await page.$eval(".ticker__track", e => getComputedStyle(e).animationName);
     const b = await page.$eval(".name", e => getComputedStyle(e).animationName);
     assert(a === "none" && b === "none", a + " " + b);
-    const hidden = await page.$$eval(".project, .contact, .skill-group", els => els.filter(e => getComputedStyle(e).opacity !== "1").length);
+    const hidden = await page.$$eval(".project, .contact, .decal__cut", els => els.filter(e => getComputedStyle(e).opacity !== "1").length);
     assert(!hidden && !(await page.$("html.motion")) && !(await page.$(".role .w")), "content waits for an animation");
     await page.context().close();
   });

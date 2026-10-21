@@ -233,15 +233,131 @@ body.plain .stats div { border: 1px solid #e3e4e8; }
 .note { font-size: 15px; color: var(--ink-soft); }
 .links { display: flex; flex-wrap: wrap; gap: var(--s4); font-weight: 600; }
 
-/* ---------- Skills ---------- */
-.skills { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: var(--s4); }
-.skill-group { background: var(--paper); border: var(--border); border-radius: var(--radius); padding: var(--s4); box-shadow: var(--shadow-sm); }
-.skill-group:nth-child(2) { background: var(--mint); }
-.skill-group:nth-child(3) { background: var(--pink); }
-.skill-group:nth-child(4) { background: var(--sun); }
-body.plain .skill-group { background: var(--paper); }
-.skill-group h3 { font: 700 12px var(--mono); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: var(--s2); }
-.skill-group ul { list-style: none; margin: 0; padding: 0; font: 800 20px/1.35 var(--display); }
+/* ---------- Skills: a laptop lid covered in stickers ---------- */
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* Small logos in front of each project's stack. */
+.stack-logos { display: flex; gap: 6px; margin: 4px 0 6px; }
+.stack-logos svg { width: 22px; height: 22px; fill: var(--ink); }
+
+/* The lid: brushed aluminium with a hard poster shadow. */
+.lid {
+  position: relative; border: var(--border); border-radius: 26px; box-shadow: var(--shadow);
+  background:
+    radial-gradient(ellipse at 30% 0%, rgba(255,255,255,.75), transparent 60%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.18) 0 1px, transparent 1px 3px),
+    linear-gradient(160deg, #dfe2e8, #b7bcc6 55%, #cfd3da);
+  padding: var(--s8) var(--s4) var(--s12);
+  touch-action: pan-y;
+  /* Tilted stickers near the edge would otherwise push the page sideways on phones. */
+  overflow: clip;
+}
+.lid__stickers {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 0 var(--s1);
+  --w: 104px;
+}
+/* A scatter that looks hand-placed but is the same on every visit: three overlapping cycles. */
+.lid__stickers li { --r: -6deg; --x: 0px; --y: 0px; margin: -6px 0; position: relative; }
+.lid__stickers li:nth-child(3n+2) { --r: 5deg; }
+.lid__stickers li:nth-child(3n) { --r: -1deg; }
+.lid__stickers li:nth-child(4n+1) { --y: 10px; }
+.lid__stickers li:nth-child(4n+3) { --y: -6px; }
+.lid__stickers li:nth-child(5n+2) { --x: 8px; }
+.lid__stickers li:nth-child(5n+4) { --x: -10px; }
+
+.decal {
+  --dx: 0px; --dy: 0px; --lift: 1;
+  display: block; position: relative; width: calc(var(--w) * var(--k, 1)); height: calc(var(--w) * var(--k, 1) * 1.155);
+  padding: 0; margin: 0; border: 0; background: none; color: inherit; cursor: grab;
+  translate: calc(var(--x) + var(--dx)) calc(var(--y) + var(--dy));
+  rotate: calc(var(--r) * var(--tilt, 1)); scale: var(--lift);
+  filter: drop-shadow(3px 4px 0 rgba(17, 18, 26, .55));
+  transition: scale .18s var(--ease-pop), rotate .25s var(--ease-pop), filter .18s;
+  -webkit-touch-callout: none; user-select: none; -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.decal:focus-visible { outline: none; }
+.decal:focus-visible .decal__cut { outline: 3px solid var(--hot); outline-offset: -3px; }
+/* Three layers: an ink outline, the white die-cut edge, then the coloured face. */
+.decal__cut, .decal__face { display: grid; width: 100%; height: 100%; }
+.decal__cut { background: var(--ink); padding: 3px; }
+.decal__face { background: #fff; padding: 5px; }
+.decal__face::before { content: ""; grid-area: 1 / 1; background: var(--bg); clip-path: inherit; border-radius: inherit; }
+.decal__logo, .decal__name { grid-area: 1 / 1; position: relative; }
+.decal__logo { width: 42%; height: auto; aspect-ratio: 1; justify-self: center; align-self: start; margin-top: 26%; fill: var(--fg); }
+.decal__name {
+  align-self: start; margin-top: 76%; justify-self: stretch; text-align: center;
+  background: #11121a; color: #fffaf0; font: 800 12px/1.6 var(--display); letter-spacing: .01em; white-space: nowrap;
+}
+.decal--hex .decal__cut, .decal--hex .decal__face, .decal--hex .decal__face::before {
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+.decal--round { height: calc(var(--w) * var(--k, 1)); margin-top: calc(var(--w) * var(--k, 1) * .08); }
+.lid__stickers li.big { --k: 1.22; }
+.big .decal__name { font-size: 14px; }
+.decal--round .decal__cut, .decal--round .decal__face, .decal--round .decal__face::before { border-radius: 50%; }
+.decal--round .decal__logo { margin-top: 18%; }
+.decal--round .decal__name { margin-top: 64%; }
+
+/* Picked up: bigger, straighter, a longer shadow. Pressed: stays raised with a yellow shadow. */
+.decal:hover { --lift: 1.06; }
+.decal.is-held { --lift: 1.14; rotate: 0deg; cursor: grabbing; z-index: 30; filter: drop-shadow(8px 12px 0 rgba(17, 18, 26, .45)); transition: scale .18s var(--ease-pop), rotate .25s var(--ease-pop); }
+.decal[aria-pressed="true"] { --lift: 1.12; filter: drop-shadow(5px 6px 0 var(--sun)) drop-shadow(2px 2px 0 var(--ink)); }
+.lid.has-pick .decal:not([aria-pressed="true"]) .decal__cut { opacity: .72; }
+
+/* The label under the lid that says where the picked tool was used. */
+.decal-card {
+  position: relative; margin: calc(var(--s12) * -1 + 8px) var(--s6) 0; z-index: 2;
+  background: var(--paper); border: var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  padding: var(--s4) var(--s6); display: grid; gap: var(--s3);
+  rotate: -.6deg;
+}
+.decal-card p { margin: 0; }
+.decal-card__empty { display: grid; gap: var(--s1); }
+.decal-card__hint { font-size: 15px; color: var(--ink-soft); }
+.decal-card__body { display: grid; grid-template-columns: auto 1fr; gap: var(--s4); align-items: start; }
+.decal-card__body[hidden], .decal-card__empty[hidden] { display: none; }
+.decal-card__body > div { display: grid; gap: var(--s2); min-width: 0; }
+.decal-card__logo { display: grid; place-items: center; width: 72px; height: 72px; border-radius: 16px; background: var(--bg); border: var(--border); }
+.decal-card__logo svg { width: 40px; height: 40px; fill: var(--fg); }
+.decal-card h3 { font-size: clamp(28px, 3.4vw, 40px); font-weight: 800; letter-spacing: -0.01em; }
+.decal-card__group { font: 700 12px var(--mono); color: var(--ink-soft); }
+.decal-card__used { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; font-weight: 600; }
+.decal-card__used button, .decal-card__used a, .decal-card__tidy {
+  font: 700 14px var(--body); color: var(--ink); background: #fff; text-decoration: none; cursor: pointer;
+  border: 2px solid var(--ink); border-radius: 999px; padding: var(--s1) var(--s3); min-height: 32px;
+}
+.decal-card__used button:hover, .decal-card__used a:hover, .decal-card__tidy:hover { background: var(--sun); }
+.decal-card__tidy { justify-self: start; background: var(--paper); font-size: 13px; }
+
+/* Stickers slap onto the lid one by one when it first scrolls into view. */
+.motion .lid.reveal { opacity: 1; translate: none; rotate: none; }
+.motion .lid .decal__cut { opacity: 0; scale: 1.5; rotate: 14deg; }
+.motion .lid.is-in .decal__cut { opacity: 1; scale: 1; rotate: 0deg; transition: opacity .2s ease-out calc(var(--i) * 55ms + 150ms), scale .45s var(--ease-pop) calc(var(--i) * 55ms + 150ms), rotate .45s var(--ease-pop) calc(var(--i) * 55ms + 150ms); }
+.motion .lid.is-in.has-pick .decal__cut { transition: opacity .2s; }
+
+/* Plain: a flat, straight grid of the same badges on a white panel. No dragging. */
+body.plain .lid { background: var(--paper); border-radius: var(--radius); padding: var(--s6) var(--s4) var(--s12); }
+body.plain .lid__stickers { gap: var(--s3); }
+body.plain .lid__stickers li { --r: 0deg; --x: 0px; --y: 0px; margin: 0; }
+body.plain .decal { --dx: 0px !important; --dy: 0px !important; filter: none; cursor: pointer; }
+body.plain .decal__cut { background: #d9dae0; padding: 1px; }
+body.plain .decal[aria-pressed="true"] { --lift: 1.06; filter: none; }
+body.plain .decal[aria-pressed="true"] .decal__cut { background: var(--hot); padding: 3px; }
+body.plain .decal-card { rotate: none; }
+body.plain .decal-card__tidy, body.plain .decal-card__hint { display: none; }
+
+@media (max-width: 900px) {
+  .lid__stickers { --w: 92px; }
+  .decal-card { margin-inline: var(--s3); padding: var(--s4); }
+  .decal-card__logo { width: 56px; height: 56px; }
+  .decal-card__logo svg { width: 32px; height: 32px; }
+}
+@media (max-width: 380px) { .lid__stickers { --w: 84px; } .lid { padding-inline: var(--s2); } }
+@media (prefers-reduced-motion: reduce) {
+  .decal, .decal.is-held { transition: none; }
+}
 
 /* ---------- About and contact ---------- */
 .about {
@@ -519,7 +635,7 @@ body.rock {
 }
 
 /* Anton is a single heavy weight, so stop the browser faking bold. */
-body.rock h1, body.rock h2, body.rock h3, body.rock .btn, body.rock .skill-group ul { font-weight: 400; }
+body.rock h1, body.rock h2, body.rock h3, body.rock .btn { font-weight: 400; }
 body.rock .section__title { text-transform: uppercase; letter-spacing: 0.01em; font-size: clamp(44px, 6vw, 76px); }
 body.rock .section__title::after {
   content: ""; display: block; width: 72px; height: 6px; margin-top: var(--s2); background: var(--hot);
@@ -569,13 +685,25 @@ body.rock .sticker { border-radius: 50%; width: 104px; height: 104px; display: g
 body.rock .sticker--sun { background: radial-gradient(circle, #fff3b0 0 14%, var(--sun) 15% 60%, #b8860b 61% 64%, var(--sun) 65%); }
 body.rock .sticker--mint { width: auto; height: auto; border-radius: 4px; padding: var(--s2) var(--s3); background: var(--hot); color: var(--paper); font-size: 20px; transform: rotate(-8deg); }
 
-/* Gear: alternating red, gold, paper, black. */
-body.rock .skill-group { border-radius: 2px; }
-body.rock .skill-group:nth-child(1) { background: var(--paper); }
-body.rock .skill-group:nth-child(2) { background: var(--hot); color: var(--ink); }
-body.rock .skill-group:nth-child(3) { background: var(--sun); }
-body.rock .skill-group:nth-child(4) { background: #1c1717; color: var(--paper); border-color: var(--paper); }
-body.rock .skill-group ul { text-transform: uppercase; font-size: 24px; letter-spacing: 0.02em; }
+/* Gear: the stickers go on a black road case with steel edges and rivets, stuck on crooked. */
+body.rock .lid {
+  border: 6px solid #8d939c; border-radius: 6px; box-shadow: 8px 8px 0 var(--hot), inset 0 0 0 2px #2b2b2b;
+  background:
+    radial-gradient(circle at 14px 14px, #c9ced6 0 4px, transparent 5px),
+    radial-gradient(circle at calc(100% - 14px) 14px, #c9ced6 0 4px, transparent 5px),
+    radial-gradient(circle at 14px calc(100% - 14px), #c9ced6 0 4px, transparent 5px),
+    radial-gradient(circle at calc(100% - 14px) calc(100% - 14px), #c9ced6 0 4px, transparent 5px),
+    repeating-linear-gradient(45deg, #1d1b1b 0 2px, #161414 2px 5px);
+}
+body.rock .lid { --tilt: 1.8; }
+body.rock .decal__cut { background: #0d0b0b; }
+body.rock .decal__name { font: 400 14px/1.5 var(--display); text-transform: uppercase; letter-spacing: .04em; }
+body.rock .decal { filter: drop-shadow(4px 4px 0 rgba(0, 0, 0, .9)); }
+body.rock .decal[aria-pressed="true"] { filter: drop-shadow(5px 5px 0 var(--hot)); }
+body.rock .decal-card { border-radius: 2px; rotate: 1deg; }
+body.rock .decal-card h3 { text-transform: uppercase; }
+body.rock .decal-card__logo { border-radius: 2px; }
+body.rock .decal-card__used button, body.rock .decal-card__used a, body.rock .decal-card__tidy { border-radius: 2px; }
 
 /* Liner notes and the booking poster. */
 body.rock .activity { border-radius: 2px; transform: rotate(0.4deg); }

@@ -154,7 +154,8 @@
     { id: "lore",   name: "Bug hunter",     hint: "Read the bugs I fixed on the headline project." },
     { id: "sudo",   name: "Nice try",       hint: "Ask the palette for admin rights." },
     { id: "name",   name: "Type lab",       hint: "Click my name a few times." },
-    { id: "konami", name: "Old school",     hint: "Up, up, down, down, left, right, left, right, B, A. Try it in Poster." }
+    { id: "konami", name: "Old school",     hint: "Up, up, down, down, left, right, left, right, B, A. Try it in Poster." },
+    { id: "sticker", name: "Rearranged",    hint: "Some things on this page are not glued down." }
   ];
   var found = load("secrets", {});
   var countEl = $("secretCount");
@@ -213,6 +214,151 @@
     }
   });
 
+  // ---------- Stickers (the skills section) ----------
+  // Pressing a sticker shows where that tool was used. Stickers can also be moved: drag with a
+  // mouse, press and hold then drag on a touch screen, or focus one and use the arrow keys.
+  var lid = $("lid");
+  var decals = Array.prototype.slice.call(document.querySelectorAll(".decal"));
+  var picked = null;
+  var zTop = 1;
+  var REPO = "https://github.com/KrBeTect2025/portfolio";
+
+  decals.forEach(function (d, i) { d.parentElement.style.setProperty("--i", i); });
+  if (!plain) $("decalHint").hidden = false;
+
+  function decalName(d) { return d.dataset.full || clean(d.textContent); }
+  function projectCard(title) {
+    return Array.prototype.find.call(document.querySelectorAll(".project"), function (c) {
+      return clean(c.querySelector("h3").textContent) === title;
+    });
+  }
+  function raise(d) { d.parentElement.style.zIndex = ++zTop; }
+
+  function pick(d) {
+    if (picked) picked.setAttribute("aria-pressed", "false");
+    picked = picked === d ? null : d;
+    lid.classList.toggle("has-pick", !!picked);
+    $("decalEmpty").hidden = !!picked;
+    $("decalBody").hidden = !picked;
+    if (!picked) return;
+    d.setAttribute("aria-pressed", "true");
+    raise(d);
+    var logo = $("decalLogo");
+    logo.style.setProperty("--bg", d.style.getPropertyValue("--bg"));
+    logo.style.setProperty("--fg", d.style.getPropertyValue("--fg"));
+    logo.querySelector("use").setAttribute("href", "#i-" + d.dataset.tool);
+    $("decalGroup").textContent = d.dataset.group;
+    $("decalName").textContent = decalName(d);
+    $("decalNote").textContent = d.dataset.note;
+    var used = $("decalUsed");
+    used.textContent = "Used in";
+    d.dataset.used.split(/,\s*/).forEach(function (title) {
+      var el;
+      if (title === "this site") {
+        el = document.createElement("a");
+        el.href = REPO; el.target = "_blank"; el.rel = "noopener";
+        el.setAttribute("aria-describedby", "newTab");
+        el.textContent = "this site";
+      } else {
+        el = document.createElement("button");
+        el.type = "button";
+        el.textContent = title;
+        el.addEventListener("click", function () { jump(projectCard(title)); });
+      }
+      used.appendChild(el);
+    });
+  }
+
+  function moved() {
+    $("decalTidy").hidden = false;
+    unlock("sticker");
+  }
+  // Keeps a sticker inside the lid. rect is where the sticker sat when the move started.
+  function clampTo(rect, box, dx, dy, start) {
+    return {
+      x: Math.min(Math.max(dx, start.x + box.left - rect.left), start.x + box.right - rect.right),
+      y: Math.min(Math.max(dy, start.y + box.top - rect.top), start.y + box.bottom - rect.bottom)
+    };
+  }
+  function offset(d) {
+    return { x: parseFloat(d.style.getPropertyValue("--dx")) || 0, y: parseFloat(d.style.getPropertyValue("--dy")) || 0 };
+  }
+  function place(d, p) {
+    d.style.setProperty("--dx", Math.round(p.x) + "px");
+    d.style.setProperty("--dy", Math.round(p.y) + "px");
+  }
+
+  var drag = null;      // the move in progress, if any
+  var skipClick = null; // a sticker that was just dropped, so its click does not count as a press
+  lid.addEventListener("pointerdown", function (e) {
+    var d = e.target.closest(".decal");
+    if (!d || plain || e.button !== 0) return;
+    drag = { d: d, id: e.pointerId, x: e.clientX, y: e.clientY, start: offset(d), rect: d.getBoundingClientRect(),
+      box: lid.getBoundingClientRect(), touch: e.pointerType === "touch", live: false, timer: null };
+    if (drag.touch) {
+      var mine = drag;
+      drag.timer = setTimeout(function () {
+        mine.live = true;
+        d.classList.add("is-held");
+        raise(d);
+        if (navigator.vibrate) navigator.vibrate(12);
+      }, 320);
+    }
+  });
+  lid.addEventListener("pointermove", function (e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    var mx = e.clientX - drag.x, my = e.clientY - drag.y;
+    if (!drag.live) {
+      // A touch that moves before the hold is a scroll. A mouse starts dragging after 5px.
+      if (Math.hypot(mx, my) < (drag.touch ? 8 : 5)) return;
+      if (drag.touch) { clearTimeout(drag.timer); drag = null; return; }
+      drag.live = true;
+      drag.d.classList.add("is-held");
+      raise(drag.d);
+    }
+    if (!drag.d.hasPointerCapture(e.pointerId)) drag.d.setPointerCapture(e.pointerId);
+    place(drag.d, clampTo(drag.rect, drag.box, drag.start.x + mx, drag.start.y + my, drag.start));
+  });
+  function endDrag(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    clearTimeout(drag.timer);
+    if (drag.live) {
+      drag.d.classList.remove("is-held");
+      var p = offset(drag.d);
+      if (p.x !== drag.start.x || p.y !== drag.start.y) { skipClick = drag.d; moved(); }
+    }
+    drag = null;
+  }
+  lid.addEventListener("pointerup", endDrag);
+  lid.addEventListener("pointercancel", endDrag);
+  // While a sticker is held on a touch screen, the finger moves the sticker, not the page.
+  lid.addEventListener("touchmove", function (e) { if (drag && drag.live) e.preventDefault(); }, { passive: false });
+  lid.addEventListener("contextmenu", function (e) { if (e.target.closest(".decal")) e.preventDefault(); });
+
+  lid.addEventListener("click", function (e) {
+    var d = e.target.closest(".decal");
+    if (!d) return;
+    if (skipClick === d) { skipClick = null; return; }
+    skipClick = null;
+    pick(d);
+  });
+  var NUDGE = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+  lid.addEventListener("keydown", function (e) {
+    var d = e.target.closest(".decal");
+    var step = NUDGE[e.key];
+    if (!d || !step || plain || e.altKey || e.ctrlKey || e.metaKey) return;
+    e.preventDefault();
+    var start = offset(d);
+    var size = e.shiftKey ? 48 : 16;
+    place(d, clampTo(d.getBoundingClientRect(), lid.getBoundingClientRect(), start.x + step[0] * size, start.y + step[1] * size, start));
+    raise(d);
+    moved();
+  });
+  $("decalTidy").addEventListener("click", function () {
+    decals.forEach(function (d) { place(d, { x: 0, y: 0 }); });
+    $("decalTidy").hidden = true;
+  });
+
   // ---------- Command palette ----------
   // A pill at the bottom of the screen that grows into a search box. Everything in it is read
   // from this page (sections, projects, links), so the HTML stays the single source of truth.
@@ -242,7 +388,8 @@
     out: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
     lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
     check: '<path d="m5 12 5 5L20 7"/>',
-    back: '<path d="M19 12H5M11 6l-6 6 6 6"/>'
+    back: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+    tag: '<path d="M12 3 20 7.5v9L12 21l-8-4.5v-9z"/><circle cx="12" cy="12" r="2.5"/>'
   };
   function icon(name) {
     return '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[name] + "</svg>";
@@ -320,6 +467,17 @@
         detail: a.href.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, ""), icon: "out", href: a.href });
     });
 
+    // Tools: only once you type, so the list does not open with fifteen stickers in it.
+    decals.forEach(function (d) {
+      items.push({ group: "Tools", label: decalName(d), detail: "Used in " + d.dataset.used, icon: "tag", needsQuery: true,
+        words: d.dataset.group + " skills sticker", run: function () {
+          jump($("skills"));
+          if (picked !== d) pick(d);
+          d.focus({ preventScroll: true });
+          return d;
+        } });
+    });
+
     // Hidden: only shows up when typed exactly. One of the five secrets.
     items.push({ group: "Hmm", label: "Permission denied", detail: "Nice try, though. The contact section is the way in.",
       icon: "lock", hidden: /^sudo(\s|$)/i, keep: true, run: function () { unlock("sudo"); } });
@@ -342,6 +500,7 @@
     var words = q.split(/\s+/).filter(Boolean);
     return items.filter(function (it) {
       if (it.hidden) return it.hidden.test(q);
+      if (it.needsQuery && !q) return false;
       var hay = (it.label + " " + it.detail + " " + it.group + " " + (it.words || "")).toLowerCase();
       return words.every(function (w) { return hay.indexOf(w) !== -1; });
     });
@@ -583,7 +742,7 @@
   // ---------- Reveal on scroll ----------
   // Cards pop up as they come into view. Without the "motion" class nothing is ever hidden.
   if (canReveal) {
-    var REVEAL = ".activity, .project, .skill-group, .about, .contact, .style-hint, .section__title";
+    var REVEAL = ".activity, .project, .lid, .about, .contact, .style-hint, .section__title";
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) {
         if (!en.isIntersecting) return;
@@ -592,7 +751,7 @@
       });
     }, { rootMargin: "0px 0px -8% 0px" });
     document.querySelectorAll(REVEAL).forEach(function (el) {
-      var siblings = el.parentElement.querySelectorAll(":scope > .project, :scope > .skill-group");
+      var siblings = el.parentElement.querySelectorAll(":scope > .project");
       el.style.setProperty("--d", Math.max(0, Array.prototype.indexOf.call(siblings, el)) * 90 + "ms");
       el.classList.add("reveal");
       io.observe(el);
