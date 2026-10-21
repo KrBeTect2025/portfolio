@@ -45,7 +45,7 @@ body.plain [data-loud] { display: none !important; }
 
 /* ---------- Base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scrollbar-gutter: stable; }
 body {
   margin: 0;
   background-color: var(--stage);
@@ -59,6 +59,9 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
 :focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
 body.plain :focus-visible { outline-color: var(--hot); }
 .skip-link { position: absolute; left: -9999px; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+/* Sections and cards the palette jumps to take focus, but a ring around a whole section is noise. */
+[tabindex="-1"]:focus { outline: none; }
 .skip-link:focus { left: var(--s4); top: var(--s4); z-index: 100; background: var(--paper); padding: var(--s2) var(--s3); border: var(--border); }
 
 /* ---------- Ticker ---------- */
@@ -75,7 +78,8 @@ body.plain :focus-visible { outline-color: var(--hot); }
   gap: var(--s12);
   max-width: 1240px;
   margin: 0 auto;
-  padding: var(--s12) var(--s6) var(--s16);
+  /* Extra room at the bottom so the floating palette pill never covers the last lines. */
+  padding: var(--s12) var(--s6) 128px;
 }
 /* container-type lets the name size itself to this column (the cqi unit below), so a long name never spills over. */
 .side__inner { position: sticky; top: var(--s8); display: grid; gap: var(--s6); color: var(--on-stage); container-type: inline-size; }
@@ -229,40 +233,6 @@ body.plain .stats div { border: 1px solid #e3e4e8; }
 .note { font-size: 15px; color: var(--ink-soft); }
 .links { display: flex; flex-wrap: wrap; gap: var(--s4); font-weight: 600; }
 
-/* ---------- Terminal ---------- */
-.term {
-  background: var(--ink); color: #dfe6ff; border: var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
-  font: 14px/1.55 var(--mono); overflow: hidden; min-width: 0;
-}
-body.plain .term { border: 1px solid var(--ink); }
-.term__bar { display: flex; align-items: center; gap: 6px; padding: var(--s2) var(--s3); background: #1e2030; color: #8f97b8; font-size: 12px; }
-.term__bar i { width: 11px; height: 11px; border-radius: 50%; background: var(--hot); }
-.term__bar i:nth-child(2) { background: var(--sun); }
-.term__bar i:nth-child(3) { background: var(--mint); }
-.term__bar span { margin-left: var(--s2); }
-.term__out { height: 300px; overflow: auto; padding: var(--s3) var(--s4); white-space: pre-wrap; overflow-wrap: anywhere; }
-.term__out .cmd { color: var(--mint); }
-.term__out .err { color: #ff9a85; }
-.term__out .hi { color: var(--sun); }
-.term__line { display: flex; gap: var(--s2); padding: var(--s3) var(--s4); border-top: 1px solid #2c2f44; }
-.term__line label { color: var(--mint); }
-.term__line { align-items: center; }
-.term__line input { flex: 1; min-width: 0; min-height: 32px; background: transparent; border: 0; color: inherit; font: inherit; outline: none; }
-.term__run {
-  font: 700 12px var(--mono); text-transform: uppercase; letter-spacing: 0.08em;
-  color: var(--ink); background: var(--mint); border: 0; border-radius: 6px; padding: var(--s1) var(--s3); min-height: 32px; cursor: pointer;
-}
-.term__run:hover { background: var(--sun); }
-.term__line:focus-within { box-shadow: inset 0 0 0 2px var(--sun); }
-.term__line input::placeholder { color: #6c7394; }
-
-.chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
-.chips button {
-  font: 700 13px var(--mono); color: var(--ink); background: var(--paper);
-  border: 2px solid var(--ink); border-radius: 999px; padding: var(--s1) var(--s3); cursor: pointer;
-}
-.chips button:hover { background: var(--sun); }
-
 /* ---------- Skills ---------- */
 .skills { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: var(--s4); }
 .skill-group { background: var(--paper); border: var(--border); border-radius: var(--radius); padding: var(--s4); box-shadow: var(--shadow-sm); }
@@ -310,9 +280,10 @@ body.plain .style-hint__kicker { color: var(--hot); }
 body.plain .style-hint__choices button[aria-pressed="true"] { background: var(--hot); color: #fff; }
 .style-hint__note { font-size: 15px; opacity: 0.85; }
 .style-hint code { font: 14px var(--mono); }
+.style-hint kbd { font: 700 13px var(--mono); padding: 0 6px; border: 2px solid currentColor; border-radius: 6px; }
 
 /* ---------- Toasts ---------- */
-.toasts { position: fixed; right: var(--s4); bottom: var(--s4); z-index: 80; display: grid; gap: var(--s2); max-width: calc(100vw - 32px); }
+.toasts { position: fixed; right: var(--s4); bottom: var(--s4); z-index: 95; display: grid; gap: var(--s2); max-width: calc(100vw - 32px); }
 .toast {
   background: var(--sun); color: var(--ink); border: var(--border); border-radius: 10px; box-shadow: var(--shadow-sm);
   padding: var(--s2) var(--s4); font: 600 14px var(--body); animation: pop 0.25s ease-out;
@@ -329,12 +300,194 @@ body.plain .style-hint__choices button[aria-pressed="true"] { background: var(--
   .btn { transition: none; }
 }
 
+/* ============================================================
+   Command palette. One element that is a pill when closed and
+   grows into a search panel when open: its width and corners
+   ease out, and the list unfolds upwards from the search row.
+   Each style restyles it through the --cmdk-* tokens below.
+   ============================================================ */
+:root {
+  /* A fast start and a long soft landing, close to an exponential ease-out. */
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --ease-pop: cubic-bezier(.34, 1.56, .64, 1);
+}
+.cmdk {
+  --cmdk-bg: var(--paper); --cmdk-fg: var(--ink); --cmdk-muted: var(--ink-soft);
+  --cmdk-line: var(--ink); --cmdk-hl: var(--sun); --cmdk-hl-fg: var(--ink); --cmdk-group: var(--hot-text);
+  --cmdk-key: var(--sun); --cmdk-caret: var(--hot);
+  --cmdk-radius: 28px; --cmdk-radius-open: 18px;
+  position: fixed; left: 50%; z-index: 91;
+  bottom: calc(max(20px, env(safe-area-inset-bottom)) + var(--kb, 0px));
+  translate: -50% 0;
+  width: min(310px, calc(100vw - 32px));
+  background: var(--cmdk-bg); color: var(--cmdk-fg);
+  border: var(--border); border-radius: var(--cmdk-radius); box-shadow: var(--shadow);
+  font-family: var(--body);
+  transition: width .55s var(--ease-out), border-radius .45s var(--ease-out), transform .45s var(--ease-out), box-shadow .2s;
+}
+.cmdk:not(.is-open):hover { transform: translate(-2px, -3px); box-shadow: 8px 9px 0 var(--ink); }
+.cmdk.is-open { width: min(580px, calc(100vw - 24px)); border-radius: var(--cmdk-radius-open); }
+.cmdk [hidden] { display: none !important; }
+.cmdk.is-tucked { transform: translateY(calc(100% + 40px)); }
+
+.cmdk-overlay {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgba(17, 18, 26, 0.5);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+  opacity: 0; visibility: hidden; transition: opacity .3s, visibility .3s;
+}
+.cmdk-overlay.is-open { opacity: 1; visibility: visible; }
+html.cmdk-locked { overflow: hidden; }
+
+/* The list folds away to zero height when closed; grid rows can animate where height: auto cannot. */
+.cmdk__menu { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .5s var(--ease-out), opacity .2s; }
+.cmdk.is-open .cmdk__menu { grid-template-rows: 1fr; opacity: 1; }
+.cmdk__menu-inner { min-height: 0; overflow: hidden; }
+.cmdk__list {
+  position: relative; isolation: isolate;
+  max-height: min(430px, calc(100dvh - 180px)); overflow-y: auto; overscroll-behavior: contain;
+  padding: var(--s2);
+}
+
+.cmdk__group { padding: var(--s3) var(--s3) var(--s1); font: 700 11px var(--mono); text-transform: uppercase; letter-spacing: .1em; color: var(--cmdk-group); }
+.cmdk__item {
+  display: grid; grid-template-columns: 22px auto minmax(0, 1fr) auto; align-items: center; gap: var(--s3);
+  min-height: 44px; padding: var(--s2) var(--s3); border-radius: 10px; cursor: pointer;
+}
+.cmdk__icon svg { display: block; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.cmdk__label { font: 800 17px/1.2 var(--display); white-space: nowrap; }
+.cmdk__detail { font: 13px var(--mono); color: var(--cmdk-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cmdk__go { font: 700 16px var(--mono); opacity: 0; translate: -6px 0; transition: opacity .2s, translate .25s var(--ease-out); }
+.cmdk__item[aria-selected="true"] { color: var(--cmdk-hl-fg); }
+.cmdk__item[aria-selected="true"] .cmdk__detail { color: var(--cmdk-hl-fg); }
+.cmdk__item[aria-selected="true"] .cmdk__go { opacity: 1; translate: 0 0; }
+/* External links keep their arrow, so you can tell before choosing. */
+.cmdk__go:has(+ .sr-only) { opacity: .7; translate: 0 0; }
+
+/* The block behind the active row. script.js only moves it, so it slides between rows. */
+.cmdk__hl {
+  position: absolute; top: 0; left: var(--s2); right: var(--s2); z-index: -1; pointer-events: none;
+  background: var(--cmdk-hl); border: 2px solid var(--cmdk-line); border-radius: 10px;
+  rotate: -.6deg; opacity: 0;
+  transition: transform .35s var(--ease-out), height .35s var(--ease-out), opacity .15s;
+}
+.cmdk__hl.is-instant { transition: none; }
+.cmdk__empty { margin: 0; padding: var(--s8) var(--s4); text-align: center; font: 14px var(--mono); color: var(--cmdk-muted); }
+
+.cmdk__hint {
+  display: flex; justify-content: space-between; gap: var(--s3); margin: 0;
+  padding: var(--s2) var(--s4); border-top: 2px dashed var(--cmdk-line);
+  font: 12px var(--mono); color: var(--cmdk-muted);
+}
+.cmdk kbd {
+  display: inline-block; min-width: 24px; padding: 1px 6px; text-align: center;
+  font: 700 12px/1.5 var(--mono); color: var(--ink); background: var(--cmdk-key);
+  border: 2px solid var(--cmdk-line); border-radius: 6px;
+}
+.cmdk__hint kbd { min-width: 0; padding: 0 4px; font-size: 11px; }
+
+.cmdk__row { display: flex; align-items: center; gap: var(--s3); width: 100%; min-height: 52px; padding: var(--s2) var(--s3) var(--s2) var(--s4); }
+.cmdk.is-open .cmdk__row { border-top: var(--border); }
+.cmdk__glass { flex: none; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+.cmdk__trigger { border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: inherit; }
+.cmdk__trigger:focus-visible { outline-offset: 6px; }
+.cmdk__typed { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; font: 700 15px var(--mono); }
+/* A chunky block cursor, a nod to the terminal this replaced. */
+.cmdk__caret { display: inline-block; width: 9px; height: 1.1em; margin-left: 2px; vertical-align: -3px; background: var(--cmdk-caret); animation: cmdk-blink 1s steps(1) infinite; }
+@keyframes cmdk-blink { 50% { opacity: 0; } }
+.cmdk__search input { flex: 1; min-width: 0; min-height: 36px; border: 0; outline: 0; background: none; color: inherit; font: 700 16px var(--mono); }
+.cmdk__search input::placeholder { color: var(--cmdk-muted); opacity: 1; }
+.cmdk:focus-within.is-open { box-shadow: 8px 8px 0 var(--cmdk-line); }
+.cmdk__close { border: 0; padding: 0; background: none; color: inherit; cursor: pointer; min-height: 32px; }
+.cmdk__close-text { font: 700 13px var(--mono); text-decoration: underline; text-underline-offset: 3px; }
+/* Touch screens have no / or Esc key, so drop the key hints and spell out Close. */
+@media (pointer: coarse) {
+  .cmdk__trigger kbd, .cmdk__hint, .cmdk__close kbd { display: none; }
+  .cmdk__close-text.sr-only { position: static; width: auto; height: auto; margin: 0; padding: 0 var(--s2); overflow: visible; clip: auto; }
+}
+
+/* ---------- Palette: Rockstar ---------- */
+body.rock .cmdk {
+  --cmdk-bg: #0d0b0b; --cmdk-fg: var(--paper); --cmdk-muted: #b8aea3; --cmdk-line: var(--paper);
+  --cmdk-hl: var(--hot); --cmdk-hl-fg: #0d0b0b; --cmdk-group: var(--sun); --cmdk-key: var(--sun); --cmdk-caret: var(--hot);
+  --cmdk-radius: 4px; --cmdk-radius-open: 4px;
+  border: 3px solid var(--paper); box-shadow: 6px 6px 0 var(--hot);
+}
+body.rock .cmdk:not(.is-open):hover { box-shadow: 8px 9px 0 var(--hot); }
+body.rock .cmdk:focus-within.is-open { box-shadow: 8px 8px 0 var(--hot); }
+body.rock .cmdk__label { font-weight: 400; font-size: 21px; text-transform: uppercase; letter-spacing: .03em; }
+body.rock .cmdk__group { font: 400 18px "Permanent Marker", cursive; text-transform: none; letter-spacing: 0; rotate: -2deg; transform-origin: left; }
+body.rock .cmdk__hl { border-radius: 2px; border-color: #0d0b0b; rotate: .8deg; }
+body.rock .cmdk__item { border-radius: 2px; }
+body.rock .cmdk.is-open .cmdk__row { border-top-color: var(--hot); }
+body.rock .cmdk__hint { border-top-color: #3a3030; }
+body.rock .cmdk kbd { border-color: #0d0b0b; border-radius: 2px; }
+body.rock .cmdk-overlay { background: radial-gradient(circle at 50% 110%, rgba(255, 43, 43, .35), transparent 60%), rgba(0, 0, 0, .65); }
+
+/* ---------- Palette: Plain ---------- */
+body.plain .cmdk {
+  --cmdk-hl: #eef0fd; --cmdk-line: #d9dae0; --cmdk-group: var(--ink-soft); --cmdk-key: #f0f0f3; --cmdk-caret: var(--hot);
+  --cmdk-radius-open: 14px;
+  box-shadow: 0 10px 30px rgba(17, 18, 26, .14);
+}
+body.plain .cmdk:not(.is-open):hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(17, 18, 26, .18); }
+body.plain .cmdk:focus-within.is-open { box-shadow: 0 16px 48px rgba(17, 18, 26, .2); }
+body.plain .cmdk__hl { rotate: 0deg; border: 0; box-shadow: inset 3px 0 0 var(--hot); }
+body.plain .cmdk kbd { border-width: 1px; }
+body.plain .cmdk__hint { border-top: 1px solid var(--cmdk-line); }
+body.plain .cmdk-overlay { background: rgba(244, 244, 241, .6); }
+
+/* ---------- Style switch: the new style spreads out as a circle ---------- */
+/* script.js animates the clip-path; these lines only stop the browser's default cross-fade. */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+
+/* ---------- Entrance animations (only with the "motion" class from script.js) ---------- */
+/* The line under my name streams in word by word, each one coming into focus. */
+.motion .role .w { display: inline-block; animation: stream-in .5s var(--ease-out) calc(250ms + var(--i) * 45ms) both; }
+@keyframes stream-in { from { opacity: 0; filter: blur(6px); translate: 0 6px; } }
+.motion body.plain .role .w { animation-duration: .3s; filter: none; }
+
+/* Cards rise into place as you scroll to them. The Poster style lets them land slightly crooked. */
+/* Hiding is instant and only the way back in is animated, so nothing visibly fades out on load. */
+.motion .reveal { opacity: 0; translate: 0 32px; rotate: -1.5deg; }
+.motion .reveal.is-in { opacity: 1; translate: 0 0; rotate: 0deg; transition: opacity .5s ease-out var(--d, 0ms), translate .7s var(--ease-pop) var(--d, 0ms), rotate .7s var(--ease-pop) var(--d, 0ms); }
+/* Rockstar: cards drop onto the stage with a bounce. */
+.motion body.rock .reveal { translate: 0 -28px; scale: .94; rotate: 0deg; }
+.motion body.rock .reveal.is-in { translate: 0 0; scale: 1; transition: opacity .25s ease-out var(--d, 0ms), translate .45s cubic-bezier(.2, 1.4, .4, 1) var(--d, 0ms), scale .45s cubic-bezier(.2, 1.4, .4, 1) var(--d, 0ms); }
+/* Plain: a short, quiet fade. */
+.motion body.plain .reveal { translate: 0 12px; rotate: 0deg; }
+.motion body.plain .reveal.is-in { translate: 0 0; transition: opacity .4s ease-out, translate .4s ease-out; }
+
+/* The big contact line rises letter by letter when it scrolls in. */
+.contact__big .word { display: inline-block; white-space: nowrap; }
+.contact__big .l { display: inline-block; }
+.motion .contact .l { opacity: 0; translate: 0 70%; }
+.motion .contact.is-in .l { animation: rise .8s var(--ease-pop) calc(200ms + var(--i) * 40ms) both; }
+@keyframes rise { from { opacity: 0; translate: 0 70%; rotate: 8deg; } to { opacity: 1; translate: 0 0; rotate: 0deg; } }
+.motion body.rock .contact.is-in .l { animation-name: rock-drop; }
+@keyframes rock-drop { from { opacity: 0; translate: 0 -60%; scale: 1.6; } to { opacity: 1; translate: 0 0; scale: 1; } }
+.motion body.plain .contact .l { opacity: 1; translate: none; animation: none; }
+
+/* A project you jumped to from the palette gives a little wiggle so your eye finds it. */
+.project.is-found { animation: found .7s var(--ease-pop); }
+@keyframes found { 30% { scale: 1.03; rotate: -1.2deg; } 60% { rotate: .8deg; } }
+body.plain .project.is-found { animation: found-plain 1s ease-out; }
+@keyframes found-plain { 0%, 40% { box-shadow: 0 0 0 4px var(--hot); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .cmdk, .cmdk-overlay, .cmdk__menu, .cmdk__hl, .cmdk__go { transition: none; }
+  .cmdk__caret { animation: none; }
+  .project.is-found { animation: none; outline: 4px solid var(--sun); outline-offset: 4px; }
+}
+
+
 /* ---------- Narrow screens: one column ---------- */
 @media (max-width: 900px) {
-  .layout { grid-template-columns: minmax(0, 1fr); gap: var(--s12); padding: var(--s8) var(--s4) var(--s12); }
+  .layout { grid-template-columns: minmax(0, 1fr); gap: var(--s12); padding: var(--s8) var(--s4) 112px; }
+  /* The pill sits bottom centre on phones, so toasts go above it. */
+  .toasts { bottom: 92px; }
   .side__inner { position: static; }
   .name { font-size: clamp(56px, 17vw, 110px); }
-  .term__out { height: 260px; }
   .sticker { right: var(--s3); font-size: 13px; }
 }
 
@@ -415,12 +568,6 @@ body.rock .stats div { border-radius: 0; background: #fffaf2; }
 body.rock .sticker { border-radius: 50%; width: 104px; height: 104px; display: grid; place-items: center; padding: 0; font: 400 17px/1.05 var(--display); box-shadow: 4px 4px 0 #000; top: -28px; z-index: 1; }
 body.rock .sticker--sun { background: radial-gradient(circle, #fff3b0 0 14%, var(--sun) 15% 60%, #b8860b 61% 64%, var(--sun) 65%); }
 body.rock .sticker--mint { width: auto; height: auto; border-radius: 4px; padding: var(--s2) var(--s3); background: var(--hot); color: var(--paper); font-size: 20px; transform: rotate(-8deg); }
-
-/* Terminal: the sound desk. */
-body.rock .term { border-radius: 4px; box-shadow: 8px 8px 0 var(--sun); }
-body.rock .term__bar { background: #1a1414; }
-body.rock .chips button { border-radius: 2px; }
-body.rock .chips button:hover { background: var(--hot); color: var(--paper); }
 
 /* Gear: alternating red, gold, paper, black. */
 body.rock .skill-group { border-radius: 2px; }

@@ -30,8 +30,8 @@
   <!-- A moving strip of real facts. Decoration only, so screen readers skip it. -->
   <div class="ticker" aria-hidden="true" data-loud>
     <div class="ticker__track">
-      <span>52 tests passing</span><span>FastAPI</span><span>PDF tables rebuilt from word positions</span><span>Redis cache-aside</span><span>Results deleted after 24 h</span><span>Type help in the terminal</span>
-      <span>52 tests passing</span><span>FastAPI</span><span>PDF tables rebuilt from word positions</span><span>Redis cache-aside</span><span>Results deleted after 24 h</span><span>Type help in the terminal</span>
+      <span>52 tests passing</span><span>FastAPI</span><span>PDF tables rebuilt from word positions</span><span>Redis cache-aside</span><span>Results deleted after 24 h</span><span>Press / to explore</span>
+      <span>52 tests passing</span><span>FastAPI</span><span>PDF tables rebuilt from word positions</span><span>Redis cache-aside</span><span>Results deleted after 24 h</span><span>Press / to explore</span>
     </div>
   </div>
 
@@ -41,7 +41,7 @@
       <div class="side__inner">
         <p class="hello" data-rock="Live tonight:">Hello, I am</p>
         <h1 class="name" id="name"><span>Krish</span> <span>Rathore</span></h1>
-        <p class="role">
+        <p class="role" data-stream>
           Backend and ML developer. I build <em>APIs that turn messy documents into data you can check.</em>
         </p>
 
@@ -49,7 +49,6 @@
           <ul class="nav">
             <li><a href="#activity">Activity</a></li>
             <li><a href="#projects">Projects</a></li>
-            <li><a href="#terminal">Terminal</a></li>
             <li><a href="#skills">Skills</a></li>
             <li><a href="#about">About</a></li>
             <li><a href="#contact">Contact</a></li>
@@ -64,7 +63,7 @@
         </p>
 
         <div class="side__game">
-          <button type="button" class="secrets" id="secretsBtn" aria-controls="terminal">
+          <button type="button" class="secrets" id="secretsBtn" aria-haspopup="dialog">
             Found <b id="secretCount">0</b> of <b id="secretTotal">5</b> secrets
           </button>
           <button type="button" class="mode" id="modeToggle">Style: Poster</button>
@@ -163,30 +162,6 @@
         </div>
       </section>
 
-      <!-- TERMINAL: the one game element. Clickable suggestions mean nobody has to type. -->
-      <section id="terminal" class="section">
-        <h2 class="section__title" data-rock="Backstage terminal">Ask the terminal</h2>
-        <p class="section__lede">It answers from this page. Type a command, or click one below.</p>
-        <div class="term" id="term">
-          <div class="term__bar"><i></i><i></i><i></i><span>guest@portfolio: ~</span></div>
-          <div class="term__out" id="termOut" role="log" aria-live="polite">
-            <noscript>The terminal needs JavaScript. Everything it shows is also on this page.</noscript>
-          </div>
-          <form class="term__line" id="termForm" autocomplete="off">
-            <label for="termInput">$</label>
-            <input id="termInput" type="text" spellcheck="false" autocapitalize="off" autocomplete="off" enterkeyhint="go" placeholder="type help">
-            <button type="submit" class="term__run">Run</button>
-          </form>
-        </div>
-        <div class="chips" id="termChips">
-          <button type="button" data-cmd="help">help</button>
-          <button type="button" data-cmd="ls">ls</button>
-          <button type="button" data-cmd="cat lab-report-explainer">cat lab-report-explainer</button>
-          <button type="button" data-cmd="curl /api/projects">curl /api/projects</button>
-          <button type="button" data-cmd="secrets">secrets</button>
-        </div>
-      </section>
-
       <section id="skills" class="section">
         <h2 class="section__title" data-rock="The gear">Tools I have used</h2>
         <p class="section__lede">Only what appears in the projects above.</p>
@@ -209,7 +184,7 @@
       </section>
 
       <section id="contact" class="section contact">
-        <h2 class="contact__big" data-rock="Book me.">Let's talk.</h2>
+        <h2 class="contact__big" data-rock="Book me." data-letters>Let's talk.</h2>
         <!-- TODO(you): put your real email address in both places below. -->
         <p class="contact__email"><a href="mailto:you@example.com">you@example.com</a> <button type="button" class="copy" id="copyEmail" hidden>Copy</button></p>
         <p class="side__links">
@@ -229,13 +204,40 @@
           <button type="button" data-style="rock">Rockstar</button>
           <button type="button" data-style="plain">Plain</button>
         </div>
-        <p class="style-hint__note">You can also use the Style button under my name, or type <code>style rock</code> in the terminal. Your choice is remembered.</p>
+        <p class="style-hint__note">You can also use the Style button under my name, or press <kbd>/</kbd> and type <code>style</code>. Your choice is remembered.</p>
       </section>
 
       <footer class="footer">
         Plain HTML, CSS and JavaScript. No framework, no tracking.
       </footer>
     </main>
+  </div>
+
+  <!-- COMMAND PALETTE: the floating pill at the bottom opens it, and so do / and Ctrl+K.
+       script.js builds the list from this page and unhides it, so without JavaScript it never shows. -->
+  <div class="cmdk-overlay" id="paletteOverlay" hidden></div>
+  <div class="cmdk" id="palette" hidden>
+    <div class="cmdk__menu" id="paletteMenu" inert>
+      <div class="cmdk__menu-inner">
+        <div class="cmdk__list" id="paletteList" role="listbox" aria-label="Places and actions">
+          <span class="cmdk__hl" id="paletteHl" aria-hidden="true"></span>
+        </div>
+        <p class="cmdk__hint" aria-hidden="true"><span><kbd>&uarr;</kbd> <kbd>&darr;</kbd> to explore</span><span><kbd>Enter</kbd> to open</span></p>
+      </div>
+    </div>
+    <button type="button" class="cmdk__row cmdk__trigger" id="paletteTrigger" aria-haspopup="dialog">
+      <span class="sr-only">Search this page. Shortcut: slash.</span>
+      <svg class="cmdk__glass" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
+      <span class="cmdk__typed" aria-hidden="true"><span id="paletteTyped">Explore my projects</span><i class="cmdk__caret"></i></span>
+      <kbd aria-hidden="true">/</kbd>
+    </button>
+    <div class="cmdk__row cmdk__search" id="paletteSearch" hidden>
+      <svg class="cmdk__glass" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
+      <input id="paletteInput" type="text" role="combobox" aria-label="Search pages and actions" aria-expanded="true" aria-controls="paletteList" aria-autocomplete="list"
+             placeholder="Where would you like to go?" spellcheck="false" autocapitalize="off" autocomplete="off" enterkeyhint="go">
+      <button type="button" class="cmdk__close" id="paletteClose"><kbd aria-hidden="true">esc</kbd><span class="cmdk__close-text sr-only">Close</span></button>
+    </div>
+    <p class="sr-only" id="paletteStatus" role="status"></p>
   </div>
 
   <div class="toasts" id="toasts" aria-live="polite"></div>

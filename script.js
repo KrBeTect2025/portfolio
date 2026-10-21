@@ -1,5 +1,5 @@
 // Everything interactive lives here. If this file fails to load, every piece of content is
-// still in the HTML, so a visitor loses only the terminal and the secrets.
+// still in the HTML, so a visitor loses only the command palette and the secrets.
 (function () {
   "use strict";
 
@@ -16,12 +16,73 @@
   }
   function $(id) { return document.getElementById(id); }
 
+  // ---------- Motion ----------
+  // Every entrance animation is opt-in: the "motion" class only goes on when the browser can
+  // reveal things again (IntersectionObserver) and the visitor has not asked for less motion.
+  var reduceMotion = window.matchMedia ? matchMedia("(prefers-reduced-motion: reduce)") : { matches: false };
+  var canReveal = "IntersectionObserver" in window && !reduceMotion.matches;
+  if (canReveal) document.documentElement.classList.add("motion");
+
+  // Splits a heading into one span per letter so they can rise one after another.
+  // Screen readers get the whole word from the hidden copy, never single letters.
+  function splitLetters(el) {
+    var text = el.textContent;
+    el.textContent = "";
+    var sr = document.createElement("span");
+    sr.className = "sr-only";
+    sr.textContent = text;
+    var shown = document.createElement("span");
+    shown.setAttribute("aria-hidden", "true");
+    // Letters sit inside one span per word, so the line can still wrap between words.
+    var i = 0;
+    text.split(" ").forEach(function (word, w) {
+      if (w) shown.appendChild(document.createTextNode(" "));
+      var box = document.createElement("span");
+      box.className = "word";
+      Array.prototype.forEach.call(word, function (ch) {
+        var l = document.createElement("span");
+        l.className = "l";
+        l.style.setProperty("--i", i++);
+        l.textContent = ch;
+        box.appendChild(l);
+      });
+      shown.appendChild(box);
+    });
+    el.append(sr, shown);
+  }
+
+  // Wraps each word in a span so the line can stream in word by word on load.
+  function splitWords(el) {
+    var i = 0;
+    (function walk(node) {
+      Array.prototype.slice.call(node.childNodes).forEach(function (child) {
+        if (child.nodeType === 1) return walk(child);
+        if (child.nodeType !== 3) return;
+        var frag = document.createDocumentFragment();
+        child.textContent.split(/(\s+)/).forEach(function (part) {
+          if (!part) return;
+          if (/^\s+$/.test(part)) return frag.appendChild(document.createTextNode(part));
+          var w = document.createElement("span");
+          w.className = "w";
+          w.style.setProperty("--i", i++);
+          w.textContent = part;
+          frag.appendChild(w);
+        });
+        child.replaceWith(frag);
+      });
+    })(el);
+  }
+  if (canReveal) document.querySelectorAll("[data-stream]").forEach(splitWords);
+
   // ---------- Styles: poster, rockstar, plain ----------
   // Change DEFAULT_STYLE to pick what a first-time visitor sees.
   var DEFAULT_STYLE = "poster";
   var STYLES = { poster: "Poster", rock: "Rockstar", plain: "Plain" };
+  var STYLE_NOTES = { poster: "Cobalt, paper and stickers", rock: "A gig poster, black and red", plain: "Calm and quiet" };
+  var THEME_COLORS = { poster: "#2231d8", rock: "#0d0b0b", plain: "#f4f4f1" };
   var ORDER = ["poster", "rock", "plain"];
   var modeBtn = $("modeToggle");
+  var themeMeta = document.querySelector('meta[name="theme-color"]');
   var style = load("style", DEFAULT_STYLE);
   if (!STYLES[style]) style = DEFAULT_STYLE;
   var plain = false;
@@ -40,27 +101,58 @@
       document.body.style.removeProperty("--stage");
       document.body.style.removeProperty("--stage-dot");
     }
-    swaps.forEach(function (s) { s.el.textContent = style === "rock" ? s.rock : s.normal; });
+    swaps.forEach(function (s) {
+      s.el.textContent = style === "rock" ? s.rock : s.normal;
+      if (canReveal && s.el.hasAttribute("data-letters")) splitLetters(s.el);
+    });
     document.querySelectorAll("#styleChoices button").forEach(function (b) {
       b.setAttribute("aria-pressed", String(b.dataset.style === style));
     });
     modeBtn.textContent = "Style: " + STYLES[style];
     modeBtn.setAttribute("aria-label", "Style: " + STYLES[style] + ". Click to change.");
+    if (themeMeta) themeMeta.content = THEME_COLORS[style];
   }
-  function setStyle(next) { style = next; save("style", style); applyMode(); }
+
+  // Where a style change should ripple out from: the pointer, or the middle of the control
+  // that was pressed with a keyboard (keyboard clicks report 0, 0).
+  function originOf(e, el) {
+    if (e && e.clientX) return { x: e.clientX, y: e.clientY };
+    var r = (el || document.body).getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }
+
+  // The new style spreads out as a circle from where you clicked. Browsers without
+  // view transitions, and visitors who prefer less motion, get an instant switch.
+  function setStyle(next, origin) {
+    if (next === style) return;
+    // The choice is stored at once, so quick repeated clicks always step forward.
+    style = next;
+    save("style", style);
+    if (!document.startViewTransition || reduceMotion.matches) return applyMode();
+    var x = origin ? origin.x : innerWidth / 2;
+    var y = origin ? origin.y : innerHeight / 2;
+    var r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    var t = document.startViewTransition(applyMode);
+    t.ready.then(function () {
+      document.documentElement.animate(
+        { clipPath: ["circle(0px at " + x + "px " + y + "px)", "circle(" + r + "px at " + x + "px " + y + "px)"] },
+        { duration: 700, easing: "cubic-bezier(.65, 0, .35, 1)", pseudoElement: "::view-transition-new(root)" }
+      );
+    }).catch(function () { /* the style is applied either way */ });
+  }
   $("styleChoices").addEventListener("click", function (e) {
     var b = e.target.closest("button[data-style]");
-    if (b) setStyle(b.dataset.style);
+    if (b) setStyle(b.dataset.style, originOf(e, b));
   });
-  modeBtn.addEventListener("click", function () {
-    setStyle(ORDER[(ORDER.indexOf(style) + 1) % ORDER.length]);
+  modeBtn.addEventListener("click", function (e) {
+    setStyle(ORDER[(ORDER.indexOf(style) + 1) % ORDER.length], originOf(e, modeBtn));
   });
 
   // ---------- Secrets ----------
   var SECRETS = [
-    { id: "shell",  name: "First command",  hint: "Run any command in the terminal." },
+    { id: "shell",  name: "First jump",     hint: "Open anything from the palette. Press / to start." },
     { id: "lore",   name: "Bug hunter",     hint: "Read the bugs I fixed on the headline project." },
-    { id: "sudo",   name: "Nice try",       hint: "Ask the terminal for admin rights." },
+    { id: "sudo",   name: "Nice try",       hint: "Ask the palette for admin rights." },
     { id: "name",   name: "Type lab",       hint: "Click my name a few times." },
     { id: "konami", name: "Old school",     hint: "Up, up, down, down, left, right, left, right, B, A. Try it in Poster." }
   ];
@@ -121,211 +213,391 @@
     }
   });
 
-  // ---------- Terminal ----------
-  // It reads projects straight from the HTML, so the page is the single source of truth.
-  var out = $("termOut");
-  var input = $("termInput");
+  // ---------- Command palette ----------
+  // A pill at the bottom of the screen that grows into a search box. Everything in it is read
+  // from this page (sections, projects, links), so the HTML stays the single source of truth.
+  var panel = $("palette");
+  var overlay = $("paletteOverlay");
+  var menu = $("paletteMenu");
+  var list = $("paletteList");
+  var hl = $("paletteHl");
+  var trigger = $("paletteTrigger");
+  var search = $("paletteSearch");
+  var input = $("paletteInput");
+  var status = $("paletteStatus");
+  var isOpen = false;
+  var view = "main";      // "main", or "secrets" for the list of secrets
+  var shown = [];         // the items currently in the list, in order
+  var active = 0;         // index into shown
+  var lastFocus = null;
 
-  var projects = Array.prototype.map.call(document.querySelectorAll(".project"), function (card) {
-    var stats = {};
-    card.querySelectorAll(".stats div").forEach(function (d) {
-      stats[d.querySelector("dt").textContent.toLowerCase()] = d.querySelector("dd").textContent;
-    });
-    var source = Array.prototype.find.call(card.querySelectorAll(".links a"), function (a) {
-      return /source/i.test(a.textContent);
-    });
-    return {
-      name: card.querySelector("h3").textContent.trim(),
-      summary: card.querySelector("h3 + p").textContent.replace(/\s+/g, " ").trim(),
-      stats: stats,
-      source: source ? source.href : null
-    };
-  });
-  function findProject(name) {
-    name = (name || "").toLowerCase();
-    return projects.find(function (p) { return p.name.toLowerCase() === name; });
-  }
-
-  function print(text, cls) {
-    var line = document.createElement("div");
-    if (cls) line.className = cls;
-    line.textContent = text;
-    out.appendChild(line);
-    out.scrollTop = out.scrollHeight;
-  }
-  function printLink(label, href) {
-    var line = document.createElement("div");
-    var a = document.createElement("a");
-    a.href = href; a.textContent = label; a.rel = "noopener"; a.target = "_blank";
-    a.setAttribute("aria-describedby", "newTab");
-    line.appendChild(a);
-    out.appendChild(line);
-    out.scrollTop = out.scrollHeight;
-  }
-
-  var COMMANDS = {
-    help: function () {
-      print([
-        "whoami               who I am",
-        "ls                   list projects",
-        "cat <project>        details of one project",
-        "open <project>       link to its source code",
-        "curl /api/projects   all projects as JSON",
-        "skills               tools I have used",
-        "contact              how to reach me",
-        "contributions        my GitHub activity this year",
-        "secrets              what you have found so far",
-        "style <name>         poster, rock or plain",
-        "clear                clear the screen",
-        "",
-        "Tab completes commands and project names. Up and down repeat earlier commands."
-      ].join("\n"));
-    },
-    whoami: function () {
-      print(nameEl.textContent.replace(/\s+/g, " ").trim(), "hi");
-      print(document.querySelector(".role").textContent.replace(/\s+/g, " ").trim());
-    },
-    ls: function () { print(projects.map(function (p) { return p.name; }).join("    ")); },
-    cat: function (arg) {
-      var p = findProject(arg);
-      if (!p) return print("cat: " + (arg || "") + ": no such project. Try ls.", "err");
-      var lines = [p.summary, ""];
-      Object.keys(p.stats).forEach(function (k) { lines.push(k + ": " + p.stats[k]); });
-      print(p.name, "hi");
-      print(lines.join("\n"));
-    },
-    open: function (arg) {
-      var p = findProject(arg);
-      if (!p || !p.source) return print("open: " + (arg || "") + ": no such project. Try ls.", "err");
-      print("Source code for " + p.name + ":");
-      printLink(p.source, p.source);
-    },
-    curl: function (arg) {
-      if (arg !== "/api/projects") return print("curl: try curl /api/projects", "err");
-      print("HTTP/1.1 200 OK\ncontent-type: application/json\n");
-      print(JSON.stringify(projects, null, 2));
-    },
-    skills: function () {
-      print(Array.prototype.map.call(document.querySelectorAll(".skill-group"), function (g) {
-        var items = Array.prototype.map.call(g.querySelectorAll("li"), function (li) { return li.textContent; });
-        return g.querySelector("h3").textContent + ": " + items.join(", ");
-      }).join("\n"));
-    },
-    contact: function () {
-      var email = document.querySelector(".contact__email a");
-      print("email: " + email.textContent);
-      document.querySelectorAll(".contact .btn").forEach(function (a) { print(a.textContent.toLowerCase() + ": " + a.href); });
-    },
-    contributions: function () {
-      if (!activity) return print("contributions: no data here yet. It loads on the live site.", "err");
-      var days = [];
-      activity.weeks.forEach(function (w) { days = days.concat(w); });
-      var busiest = days.reduce(function (a, b) { return b.count > a.count ? b : a; }, days[0]);
-      var s = streaks(days);
-      print("git log --since='1 year ago' --author=" + activity.login, "hi");
-      print([
-        "total:          " + activity.total,
-        "active days:    " + days.filter(function (d) { return d.count > 0; }).length + " of " + days.length,
-        "busiest day:    " + busiest.date + " (" + busiest.count + ")",
-        "longest streak: " + plural(s.best, "day"),
-        "current streak: " + plural(s.current, "day"),
-        "updated:        " + activity.updated
-      ].join("\n"));
-    },
-    secrets: function () {
-      print("Found " + foundCount() + " of " + SECRETS.length + ":", "hi");
-      SECRETS.forEach(function (s) {
-        print((found[s.id] ? "[x] " + s.name : "[ ] ???") + "    hint: " + s.hint);
-      });
-    },
-    sudo: function () {
-      print("Permission denied. Nice try, though.", "err");
-      print("If you want admin rights, the contact command is the way in.");
-      unlock("sudo");
-    },
-    style: function (arg) {
-      arg = (arg || "").toLowerCase();
-      if (arg === "rockstar") arg = "rock";
-      if (!STYLES[arg]) return print("style: pick one of poster, rock, plain. Now: " + style, "err");
-      setStyle(arg);
-      print("Style is now " + STYLES[style] + ".");
-    },
-    clear: function () { out.innerHTML = ""; }
+  // Small line icons, drawn on a 24px grid.
+  var ICONS = {
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+    copy: '<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',
+    brush: '<path d="M14 4l6 6-8.5 8.5a3 3 0 0 1-4.2 0l-1.8-1.8a3 3 0 0 1 0-4.2z"/><path d="M4 20c1.5 0 3-1 3-3"/>',
+    star: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+    hash: '<path d="M5 9h15M4 15h15M10 3 8 21M16 3l-2 18"/>',
+    folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    out: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+    lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    check: '<path d="m5 12 5 5L20 7"/>',
+    back: '<path d="M19 12H5M11 6l-6 6 6 6"/>'
   };
-  var NAMES = Object.keys(COMMANDS).filter(function (c) { return c !== "sudo"; });
+  function icon(name) {
+    return '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[name] + "</svg>";
+  }
+  function clean(text) { return (text || "").replace(/\s+/g, " ").trim(); }
 
-  var history = [];
-  var histPos = 0;
+  var SECTION_NOTES = {
+    activity: "My GitHub contributions",
+    projects: "Things I have built",
+    skills: "Tools I have used",
+    about: "A little about me",
+    contact: "Email and links"
+  };
 
-  function run(line) {
-    line = line.trim();
-    if (!line) return;
-    history.push(line);
-    histPos = history.length;
-    print("$ " + line, "cmd");
-    var parts = line.split(/\s+/);
-    var cmd = parts[0].toLowerCase();
-    if (Object.prototype.hasOwnProperty.call(COMMANDS, cmd)) {
-      COMMANDS[cmd](parts.slice(1).join(" "));
-      unlock("shell");
-    } else {
-      print(cmd + ": command not found. Type help.", "err");
+  // Scroll to a section or card, then hand it keyboard focus so Tab carries on from there.
+  function jump(el) {
+    if (!el) return;
+    if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "-1");
+    el.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "start" });
+    el.focus({ preventScroll: true });
+    if (el.classList.contains("project")) {
+      el.classList.remove("is-found");
+      void el.offsetWidth;  // restart the animation if it is already there
+      el.classList.add("is-found");
+      setTimeout(function () { el.classList.remove("is-found"); }, 1600);
     }
+    return el;
   }
 
-  $("termForm").addEventListener("submit", function (e) {
-    e.preventDefault();
-    run(input.value);
-    input.value = "";
-  });
+  function contactEmail() { return document.querySelector(".contact__email a").textContent.trim(); }
 
-  input.addEventListener("keydown", function (e) {
-    if (e.key === "ArrowUp" && history.length) {
-      e.preventDefault();
-      histPos = Math.max(0, histPos - 1);
-      input.value = history[histPos];
-    } else if (e.key === "ArrowDown" && history.length) {
-      e.preventDefault();
-      histPos = Math.min(history.length, histPos + 1);
-      input.value = history[histPos] || "";
-    } else if (e.key === "Tab") {
-      // Complete the command, or the project name after cat/open.
-      var parts = input.value.split(" ");
-      var pool = parts.length === 1 ? NAMES : projects.map(function (p) { return p.name; });
-      var word = parts[parts.length - 1].toLowerCase();
-      var matches = pool.filter(function (n) { return n.toLowerCase().indexOf(word) === 0; });
-      if (matches.length === 1) {
-        e.preventDefault();
-        parts[parts.length - 1] = matches[0];
-        input.value = parts.join(" ") + (parts.length === 1 ? " " : "");
-      } else if (matches.length > 1) {
-        e.preventDefault();
-        print(matches.join("    "));
+  function mainItems() {
+    var items = [];
+    items.push({ group: "Quick actions", label: "Say hi", detail: "Jump to my contact details", icon: "mail",
+      run: function () { return jump($("contact")); } });
+    if (navigator.clipboard) {
+      items.push({ group: "Quick actions", label: "Copy my email", detail: contactEmail(), icon: "copy",
+        run: function () {
+          navigator.clipboard.writeText(contactEmail()).then(function () {
+            toast("Copied", contactEmail());
+          }, function () { toast("Copy failed", "Select the address and copy it by hand."); });
+        } });
+    }
+    ORDER.forEach(function (s) {
+      if (s === style) return;
+      items.push({ group: "Quick actions", label: "Switch to " + STYLES[s], detail: STYLE_NOTES[s], icon: "brush",
+        words: "style theme look", run: function (origin) { setStyle(s, origin); } });
+    });
+    items.push({ group: "Quick actions", label: "Secrets", detail: "Found " + foundCount() + " of " + SECRETS.length,
+      icon: "star", words: "game hidden easter eggs", keep: true, run: function () { setView("secrets"); } });
+
+    document.querySelectorAll(".nav a").forEach(function (a) {
+      var id = a.hash.slice(1);
+      var detail = SECTION_NOTES[id] || "";
+      if (id === "activity" && activity) detail = plural(activity.total, "contribution") + " in the last year";
+      items.push({ group: "Sections", label: clean(a.textContent), detail: detail, icon: "hash",
+        run: function () { return jump(document.getElementById(id)); } });
+    });
+
+    document.querySelectorAll(".project").forEach(function (card) {
+      items.push({ group: "Projects", label: clean(card.querySelector("h3").textContent),
+        detail: clean(card.querySelector(".project__kicker").textContent), icon: "folder",
+        run: function () { return jump(card); } });
+    });
+
+    // Outside links: the contact buttons, plus any live demo.
+    var seen = {};
+    var links = Array.prototype.slice.call(document.querySelectorAll(".contact .btn, .project .links a"))
+      .filter(function (a) { return a.closest(".contact") || /demo/i.test(a.textContent); });
+    links.forEach(function (a) {
+      if (seen[a.href]) return;
+      seen[a.href] = true;
+      var card = a.closest(".project");
+      items.push({ group: "Elsewhere", label: card ? clean(card.querySelector("h3").textContent) + " demo" : clean(a.textContent),
+        detail: a.href.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, ""), icon: "out", href: a.href });
+    });
+
+    // Hidden: only shows up when typed exactly. One of the five secrets.
+    items.push({ group: "Hmm", label: "Permission denied", detail: "Nice try, though. The contact section is the way in.",
+      icon: "lock", hidden: /^sudo(\s|$)/i, keep: true, run: function () { unlock("sudo"); } });
+    return items;
+  }
+
+  function secretItems() {
+    var items = [{ group: "Secrets", label: "Back", detail: "Return to everything", icon: "back", keep: true,
+      run: function () { setView("main"); } }];
+    SECRETS.forEach(function (s) {
+      var got = !!found[s.id];
+      items.push({ group: "Found " + foundCount() + " of " + SECRETS.length, label: got ? s.name : "Not found yet",
+        detail: s.hint, icon: got ? "check" : "lock", keep: true, inert: true });
+    });
+    return items;
+  }
+
+  function filter(items, query) {
+    var q = query.trim().toLowerCase();
+    var words = q.split(/\s+/).filter(Boolean);
+    return items.filter(function (it) {
+      if (it.hidden) return it.hidden.test(q);
+      var hay = (it.label + " " + it.detail + " " + it.group + " " + (it.words || "")).toLowerCase();
+      return words.every(function (w) { return hay.indexOf(w) !== -1; });
+    });
+  }
+
+  function render() {
+    shown = filter(view === "secrets" ? secretItems() : mainItems(), view === "secrets" ? "" : input.value);
+    active = Math.min(active, Math.max(shown.length - 1, 0));
+    Array.prototype.slice.call(list.children).forEach(function (c) { if (c !== hl) c.remove(); });
+    var group = null;
+    var box = null;
+    shown.forEach(function (it, i) {
+      if (it.group !== group) {
+        group = it.group;
+        box = document.createElement("div");
+        box.setAttribute("role", "group");
+        var label = document.createElement("div");
+        label.className = "cmdk__group";
+        label.id = "palette-g" + i;
+        label.textContent = group;
+        box.setAttribute("aria-labelledby", label.id);
+        box.appendChild(label);
+        list.appendChild(box);
       }
-      // No match: let Tab move focus as normal, so keyboard users are never trapped.
+      var opt = document.createElement("div");
+      opt.className = "cmdk__item";
+      opt.id = "palette-o" + i;
+      opt.setAttribute("role", "option");
+      opt.dataset.index = i;
+      opt.innerHTML = '<span class="cmdk__icon"></span><span class="cmdk__label"></span><span class="cmdk__detail"></span>';
+      opt.querySelector(".cmdk__icon").innerHTML = icon(it.icon);
+      opt.querySelector(".cmdk__label").textContent = it.label;
+      opt.querySelector(".cmdk__detail").textContent = it.detail;
+      if (it.href) {
+        opt.insertAdjacentHTML("beforeend", '<span class="cmdk__go" aria-hidden="true">&#8599;</span><span class="sr-only">Opens in a new tab.</span>');
+      } else if (!it.inert) {
+        opt.insertAdjacentHTML("beforeend", '<span class="cmdk__go" aria-hidden="true">&rarr;</span>');
+      }
+      box.appendChild(opt);
+    });
+    if (!shown.length) {
+      var empty = document.createElement("p");
+      empty.className = "cmdk__empty";
+      empty.textContent = "Nothing here. Try “projects” or “style”.";
+      list.appendChild(empty);
     }
+    status.textContent = shown.length ? plural(shown.length, "result") : "No results";
+    highlight(true);
+  }
+
+  // Moves the coloured block behind the active row. It slides, rather than jumping,
+  // because only its position changes; the rows themselves never move.
+  function highlight(instant) {
+    list.querySelectorAll('[aria-selected="true"]').forEach(function (o) { o.setAttribute("aria-selected", "false"); });
+    var opt = $("palette-o" + active);
+    if (!opt) {
+      hl.style.opacity = "0";
+      input.removeAttribute("aria-activedescendant");
+      return;
+    }
+    opt.setAttribute("aria-selected", "true");
+    input.setAttribute("aria-activedescendant", opt.id);
+    if (instant) hl.classList.add("is-instant");
+    hl.style.opacity = "1";
+    hl.style.transform = "translateY(" + opt.offsetTop + "px)";
+    hl.style.height = opt.offsetHeight + "px";
+    if (instant) { void hl.offsetWidth; hl.classList.remove("is-instant"); }
+    opt.scrollIntoView({ block: "nearest" });
+  }
+
+  function setView(next) {
+    view = next;
+    active = next === "secrets" ? 1 : 0;
+    input.value = "";
+    input.placeholder = next === "secrets" ? "Esc to go back" : "Where would you like to go?";
+    input.readOnly = next === "secrets";
+    render();
+  }
+
+  // Everything except the palette and the toasts goes inert while it is open,
+  // so Tab, clicks and screen readers stay inside the dialog.
+  var outside = Array.prototype.filter.call(document.body.children, function (el) {
+    return el !== panel && el !== overlay && el.id !== "toasts" && el.tagName !== "SCRIPT";
   });
 
-  $("termChips").addEventListener("click", function (e) {
-    var btn = e.target.closest("button[data-cmd]");
-    if (btn) run(btn.dataset.cmd);
-  });
+  function openPalette(startView) {
+    if (isOpen) return;
+    isOpen = true;
+    lastFocus = document.activeElement;
+    stopTyping();
+    panel.classList.remove("is-tucked");
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-modal", "true");
+    panel.setAttribute("aria-label", "Search this page");
+    trigger.hidden = true;
+    search.hidden = false;
+    menu.inert = false;
+    outside.forEach(function (el) { el.inert = true; });
+    document.documentElement.classList.add("cmdk-locked");
+    setView(startView || "main");
+    panel.classList.add("is-open");
+    overlay.classList.add("is-open");
+    input.focus({ preventScroll: true });
+    highlight(true);
+  }
 
-  // The secrets counter jumps to the terminal and lists them.
-  $("secretsBtn").addEventListener("click", function () {
-    $("terminal").scrollIntoView({ behavior: "smooth", block: "start" });
-    run("secrets");
-  });
+  function closePalette(focusTarget) {
+    if (!isOpen) return;
+    isOpen = false;
+    panel.classList.remove("is-open");
+    overlay.classList.remove("is-open");
+    panel.removeAttribute("role");
+    panel.removeAttribute("aria-modal");
+    panel.removeAttribute("aria-label");
+    menu.inert = true;
+    search.hidden = true;
+    trigger.hidden = false;
+    outside.forEach(function (el) { el.inert = false; });
+    document.documentElement.classList.remove("cmdk-locked");
+    status.textContent = "";
+    var back = focusTarget || (lastFocus && lastFocus !== document.body && lastFocus.isConnected ? lastFocus : trigger);
+    back.focus({ preventScroll: !!focusTarget });
+    startTyping();
+  }
 
-  // Backtick jumps to the terminal from anywhere.
-  document.addEventListener("keydown", function (e) {
-    var typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
-    if (e.key === "`" && !typing) {
+  function choose(i) {
+    var it = shown[i];
+    if (!it || it.inert) return;
+    if (it.keep) return it.run();
+    // Ripple a style change out from the palette's input, where the eye already is.
+    var origin = originOf(null, search);
+    closePalette(it.href ? null : document.body);
+    unlock("shell");
+    if (it.href) return window.open(it.href, "_blank", "noopener");
+    var target = it.run(origin);
+    if (!target) (lastFocus && lastFocus !== document.body && lastFocus.isConnected ? lastFocus : trigger).focus();
+  }
+
+  function move(step) {
+    if (!shown.length) return;
+    active = (active + step + shown.length) % shown.length;
+    highlight();
+  }
+
+  input.addEventListener("input", function () { active = 0; render(); });
+
+  panel.addEventListener("keydown", function (e) {
+    if (!isOpen) return;
+    if (e.key === "Escape") {
       e.preventDefault();
-      $("terminal").scrollIntoView({ behavior: "smooth", block: "start" });
-      input.focus({ preventScroll: true });
+      if (view === "secrets") setView("main"); else closePalette();
+    } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      move(e.key === "ArrowDown" ? 1 : -1);
+    } else if (e.key === "Enter" && e.target === input) {
+      e.preventDefault();
+      choose(active);
+    } else if (e.key === "Tab") {
+      // Only two stops inside: the search box and the close button.
+      e.preventDefault();
+      (document.activeElement === input ? $("paletteClose") : input).focus();
     }
   });
+
+  list.addEventListener("click", function (e) {
+    var opt = e.target.closest("[role=option]");
+    if (opt) { active = Number(opt.dataset.index); highlight(); choose(active); }
+  });
+  list.addEventListener("pointermove", function (e) {
+    var opt = e.target.closest("[role=option]");
+    if (opt && Number(opt.dataset.index) !== active) { active = Number(opt.dataset.index); highlight(); }
+  });
+  // Clicking a row should not pull focus out of the search box.
+  list.addEventListener("mousedown", function (e) { if (e.target.closest("[role=option]")) e.preventDefault(); });
+
+  trigger.addEventListener("click", function () { openPalette(); });
+  overlay.addEventListener("click", function () { closePalette(); });
+  $("paletteClose").addEventListener("click", function () { closePalette(); });
+  $("secretsBtn").addEventListener("click", function () { openPalette("secrets"); });
+
+  // "/" opens it from anywhere you are not typing. Ctrl+K (Cmd+K on a Mac) also toggles it.
+  document.addEventListener("keydown", function (e) {
+    var el = document.activeElement;
+    var typing = el && (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable);
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      if (isOpen) closePalette(); else openPalette();
+    } else if (e.key === "/" && !typing && !isOpen && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      openPalette();
+    }
+  });
+
+  // The pill types out a few suggestions, then deletes them, like someone at a prompt.
+  var PROMPTS = ["Explore my projects", "Find all " + SECRETS.length + " secrets", "Switch the style", "Say hi"];
+  var typed = $("paletteTyped");
+  var typeTimer = null;
+  function stopTyping() { clearTimeout(typeTimer); typeTimer = null; }
+  function startTyping() {
+    stopTyping();
+    if (reduceMotion.matches) { typed.textContent = PROMPTS[0]; return; }
+    var n = 0, len = PROMPTS[0].length, deleting = true;
+    (function step() {
+      var word = PROMPTS[n];
+      len += deleting ? -1 : 1;
+      typed.textContent = word.slice(0, len);
+      var wait = deleting ? 35 : 70;
+      if (len === word.length) { deleting = true; wait = 2200; }
+      if (len === 0) { deleting = false; n = (n + 1) % PROMPTS.length; wait = 400; }
+      typeTimer = setTimeout(step, wait);
+    })();
+  }
+
+  // Tuck the pill away while you scroll down to read, bring it back when you scroll up.
+  var lastY = window.scrollY;
+  window.addEventListener("scroll", function () {
+    var y = window.scrollY;
+    if (!isOpen && Math.abs(y - lastY) > 6) {
+      var atEnd = window.innerHeight + y >= document.documentElement.scrollHeight - 40;
+      panel.classList.toggle("is-tucked", y > lastY && y > 240 && !atEnd);
+      lastY = y;
+    }
+  }, { passive: true });
+  // Focusing the pill with Tab always brings it back into view.
+  trigger.addEventListener("focus", function () { panel.classList.remove("is-tucked"); });
+
+  // Phones: keep the open palette above the on-screen keyboard.
+  if (window.visualViewport) {
+    visualViewport.addEventListener("resize", function () {
+      var hidden = window.innerHeight - visualViewport.height - visualViewport.offsetTop;
+      panel.style.setProperty("--kb", Math.max(0, hidden) + "px");
+    });
+  }
+
+  panel.hidden = false;
+  overlay.hidden = false;
+  startTyping();
+
+  // ---------- Reveal on scroll ----------
+  // Cards pop up as they come into view. Without the "motion" class nothing is ever hidden.
+  if (canReveal) {
+    var REVEAL = ".activity, .project, .skill-group, .about, .contact, .style-hint, .section__title";
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        en.target.classList.add("is-in");
+        io.unobserve(en.target);
+      });
+    }, { rootMargin: "0px 0px -8% 0px" });
+    document.querySelectorAll(REVEAL).forEach(function (el) {
+      var siblings = el.parentElement.querySelectorAll(":scope > .project, :scope > .skill-group");
+      el.style.setProperty("--d", Math.max(0, Array.prototype.indexOf.call(siblings, el)) * 90 + "ms");
+      el.classList.add("reveal");
+      io.observe(el);
+    });
+  }
 
   // ---------- Activity chart ----------
   // data/contributions.json is written once a day by the GitHub Action in
@@ -453,9 +725,4 @@
   // ---------- Start ----------
   applyMode();
   renderCount();
-  out.textContent = "";  // drop the no-JavaScript message
-  print("Welcome. This terminal answers from the page you are reading.", "hi");
-  print("Type help, or click a command below.");
-  // The backtick shortcut only makes sense with a keyboard.
-  if (window.matchMedia && matchMedia("(pointer: fine)").matches) print("Press ` anywhere to jump here.");
 })();
