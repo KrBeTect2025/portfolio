@@ -532,26 +532,53 @@ function tipText(day) {
     assert(!bad.length, bad.join(", "));
   });
 
-  await test("no top bar; the glass pill sits at the bottom centre and stays there while scrolling", async () => {
+  await test("no top bar; a clear glass pill sits at the bottom centre", async () => {
     for (const vp of [{ width: 320, height: 640 }, { width: 375, height: 812 }, { width: 768, height: 1024 }, { width: 1440, height: 900 }]) {
       const page = await newPage({ viewport: vp }); await page.goto(BASE);
-      const read = () => page.evaluate(() => {
+      const top = await page.evaluate(() => {
         const d = document.getElementById("dock"), b = d.getBoundingClientRect(), cs = getComputedStyle(d);
-        return { header: document.querySelectorAll("header, .sg-top").length, pos: cs.position, glass: cs.backdropFilter || cs.webkitBackdropFilter,
+        // The tint is the last background layer: rgba(r, g, b, a).
+        const tint = +((cs.backgroundColor.match(/[\d.]+(?=\))/) || [1])[0]);
+        return { header: document.querySelectorAll("header, .sg-top").length, pos: cs.position, glass: cs.backdropFilter || cs.webkitBackdropFilter, tint,
           left: b.left, right: innerWidth - b.right, gap: innerHeight - b.bottom, links: [...d.querySelectorAll("a")].map(a => a.getBoundingClientRect().height) };
       });
-      const top = await read();
-      await page.evaluate(() => document.getElementById("approach").scrollIntoView({ behavior: "instant" }));
-      const mid = await read();
       const where = `${vp.width}px ${JSON.stringify(top)}`;
       assert(top.header === 0, "a header is back: " + where);
       assert(top.pos === "fixed" && /blur/.test(top.glass), "not a fixed glass pill: " + where);
+      assert(top.tint <= 0.2, "the glass is tinted too dark: " + where);
       assert(Math.abs(top.gap - 16) <= 1, "not 16px above the bottom: " + where);
       assert(Math.abs(top.left - top.right) <= 1 && top.left >= 8, "not centred inside the screen: " + where);
       assert(top.links.length === 5 && top.links.every(h => h >= 44), "links under 44px: " + where);
-      assert(JSON.stringify(mid) === JSON.stringify(top), `moved while scrolling at ${vp.width}px: ${JSON.stringify(mid)}`);
       await page.context().close();
     }
+  });
+
+  await test("the pill slides away while reading down, and returns on scroll up, at the ends, and on Tab", async () => {
+    const page = await newPage({ viewport: { width: 375, height: 812 } }); await page.goto(BASE); await mapReady(page);
+    const away = () => page.evaluate(() => {
+      const d = document.getElementById("dock");
+      return d.classList.contains("is-away") && getComputedStyle(d).pointerEvents === "none";
+    });
+    const scrollTo = async y => { await page.evaluate(y => window.scrollTo({ top: y, behavior: "instant" }), y); await sleep(120); };
+    assert(!(await away()), "away at the top");
+    await scrollTo(1500); await scrollTo(1900);
+    assert(await away(), "still there after reading down");
+    await scrollTo(1860);
+    assert(!(await away()), "did not come back on scroll up");
+    await scrollTo(2400);
+    assert(await away(), "did not leave again");
+    await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" })); await sleep(120);
+    assert(!(await away()), "away at the bottom of the page");
+    await scrollTo(1500); await scrollTo(1900);
+    assert(await away(), "did not leave for the Tab check");
+    await page.focus('#dock a[href="#github"]'); await sleep(80);
+    assert(!(await away()), "hidden while a link in it has focus");
+    await page.context().close();
+    // With motion off it never leaves.
+    const still = await newPage({ viewport: { width: 375, height: 812 }, reducedMotion: "reduce" }); await still.goto(BASE);
+    for (const y of [1500, 1900, 2600]) { await still.evaluate(y => window.scrollTo({ top: y, behavior: "instant" }), y); await sleep(120); }
+    assert(!(await still.$eval("#dock", d => d.classList.contains("is-away"))), "left the screen under reduced motion");
+    await still.context().close();
   });
 
   await test("the pill marks the section being read, slides its highlight there, and marks nothing in the hero", async () => {
@@ -575,9 +602,20 @@ function tipText(day) {
     await page.waitForFunction(() => (document.querySelector("#dock a[aria-current]") || {}).textContent === "contact", null, { timeout: 2000 });
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
     await page.waitForFunction(() => !document.querySelector("#dock a[aria-current]"), null, { timeout: 2000 });
-    await page.click('#dock a[href="#skills"]');
-    await page.waitForFunction(() => (document.querySelector("#dock a[aria-current]") || {}).textContent === "skills", null, { timeout: 3000 });
-    assert(/#skills$/.test(page.url()), page.url());
+    // A click marks its link at once, and the sections passed on the way are never marked.
+    await page.evaluate(() => {
+      window.__marks = [];
+      new MutationObserver(() => { const a = document.querySelector("#dock a[aria-current]"); window.__marks.push(a ? a.textContent : ""); })
+        .observe(document.getElementById("dock"), { subtree: true, attributes: true, attributeFilter: ["aria-current"] });
+    });
+    await page.click('#dock a[href="#approach"]');
+    r = await state();
+    assert(r.current === "approach", "not marked at once: " + JSON.stringify(r));
+    await page.waitForFunction(() => Math.abs(document.getElementById("approach").getBoundingClientRect().top) < 2, null, { timeout: 4000 });
+    await sleep(500);
+    const marks = await page.evaluate(() => [...new Set(window.__marks.filter(Boolean))]);
+    assert(marks.join() === "approach", "marked on the way: " + marks.join());
+    assert(/#approach$/.test(page.url()), page.url());
     await page.context().close();
   });
 
@@ -599,25 +637,37 @@ function tipText(day) {
     assert(!bad.length, bad.join(" | "));
   });
 
-  await test("contact text sits on top of the edge orbit scene, which fills the space behind it", async () => {
+  await test("contact text sits on the edge orbit scene on wide screens; on phones the scene starts at the name", async () => {
     const bad = [];
     for (const vp of [{ width: 320, height: 640 }, { width: 375, height: 812 }, { width: 768, height: 1024 }, { width: 1440, height: 900 }, { width: 1920, height: 1080 }]) {
       const page = await newPage({ viewport: vp }); await page.goto(BASE);
-      await page.evaluate(() => document.getElementById("say").scrollIntoView({ block: "center", behavior: "instant" }));
+      await page.evaluate(() => document.getElementById("wordmark").scrollIntoView({ block: "center", behavior: "instant" }));
       await page.waitForSelector(".sg-end-art canvas", { timeout: 8000 });
       const r = await page.evaluate(() => {
         const box = el => el.getBoundingClientRect();
         const art = box(document.querySelector(".sg-end-art")), cv = box(document.querySelector(".sg-end-art canvas"));
         const say = box(document.getElementById("say")), socials = box(document.querySelector(".sg-socials"));
-        const email = document.getElementById("emailLink"), e = box(email);
-        const topEl = document.elementFromPoint(e.left + e.width / 2, e.top + e.height / 2);
-        return { art, cv, say, socials, onTop: email.contains(topEl), ratio: cv.width / art.width };
+        const wm = box(document.getElementById("wordmark")), bottom = box(document.querySelector(".sg-bottom")), page = document.documentElement;
+        return { art, cv, say, socials, wm, bottom, pageBottom: page.scrollHeight - scrollY, ratio: cv.width / art.width };
       });
-      const w = `${vp.width}px`;
-      if (!(r.cv.top <= r.say.top && r.cv.bottom >= r.socials.bottom)) bad.push(`${w}: scene ${Math.round(r.cv.top)}-${Math.round(r.cv.bottom)} does not span the text ${Math.round(r.say.top)}-${Math.round(r.socials.bottom)}`);
-      if (!(r.cv.left <= 0.5 && r.cv.right >= vp.width - 0.5)) bad.push(`${w}: scene is narrower than the screen`);
-      if (!(r.say.top >= r.art.top && r.socials.bottom <= r.art.bottom)) bad.push(`${w}: text is outside the scene's box`);
-      if (!r.onTop) bad.push(`${w}: the Email me button is not on top`);
+      // Nothing from the scene sits over the links.
+      const onTop = sel => page.evaluate(sel => {
+        const el = document.querySelector(sel); el.scrollIntoView({ block: "center", behavior: "instant" });
+        const b = el.getBoundingClientRect(), t = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+        return el.contains(t);
+      }, sel);
+      r.emailOnTop = await onTop("#emailLink");
+      r.backOnTop = await onTop('.sg-bottom a[href="#top"]');
+      const w = `${vp.width}px`, phone = vp.width <= 640;
+      // The scene covers its whole box, and its box covers what it should.
+      if (!(r.cv.top <= r.art.top + 0.5 && r.cv.bottom >= r.art.bottom - 0.5 && r.cv.left <= 0.5 && r.cv.right >= vp.width - 0.5)) bad.push(`${w}: scene does not fill its box`);
+      if (phone) {
+        if (!(r.art.top >= r.socials.bottom && r.art.top <= r.wm.top - 40)) bad.push(`${w}: scene should start between the links and the name (${Math.round(r.socials.bottom)} < ${Math.round(r.art.top)} < ${Math.round(r.wm.top)})`);
+        if (Math.abs(r.art.bottom - r.pageBottom) > 1) bad.push(`${w}: scene should run to the bottom of the page`);
+      } else {
+        if (!(r.art.top <= r.say.top - 40 && r.art.bottom >= r.wm.bottom - 1 && r.art.bottom <= r.bottom.top + 1)) bad.push(`${w}: scene should sit behind the contact text and the name`);
+      }
+      if (!r.emailOnTop || !r.backOnTop) bad.push(`${w}: a link is under the scene`);
       if (r.ratio > 4.01) bad.push(`${w}: scene blown up ${r.ratio.toFixed(2)}x`);
       await page.context().close();
     }
@@ -670,7 +720,7 @@ function tipText(day) {
     await page.context().close();
   });
 
-  await test("grids: bento, four skill compartments (4, then 2, then 1 across), phone hero order", async () => {
+  await test("grids: bento, four skill compartments (4, then 2, then 1 across), phone hero opens with the scene", async () => {
     const across = async w => {
       const page = await newPage({ viewport: { width: w, height: 900 } }); await page.goto(BASE);
       const r = await page.evaluate(() => {
@@ -678,7 +728,7 @@ function tipText(day) {
         const lead = document.querySelector(".sg-card--lead").getBoundingClientRect().width;
         const small = document.querySelector(".sg-bento .sg-card:not(.sg-card--lead)").getBoundingClientRect().width;
         const heroText = document.querySelector(".sg-hero-in").getBoundingClientRect(), art = document.querySelector(".sg-art").getBoundingClientRect();
-        return { count: tops.length, firstRow: tops.filter(t => t === tops[0]).length, ratio: lead / small, textAbove: heroText.bottom <= art.top + 1 };
+        return { count: tops.length, firstRow: tops.filter(t => t === tops[0]).length, ratio: lead / small, artFirst: art.bottom <= heroText.top + 1, artAtTop: Math.round(art.top) === 0 };
       });
       await page.context().close();
       return r;
@@ -689,7 +739,8 @@ function tipText(day) {
     assert(phone.firstRow === 1, "375px skills: " + JSON.stringify(phone));
     assert(wide.ratio > 1.9, "headline card should span two columns: " + wide.ratio);
     assert(Math.abs(phone.ratio - 1) < 0.01, "phone cards should be full width: " + phone.ratio);
-    assert(phone.textAbove && !wide.textAbove, "hero text should sit above the scene only on phones");
+    assert(phone.artFirst && phone.artAtTop, "on phones the page should open with the scene, then the hero text: " + JSON.stringify(phone));
+    assert(!wide.artFirst, "on wide screens the hero text should sit over the scene: " + JSON.stringify(wide));
   });
 
   await test("touch targets are at least 44px tall on a phone (inline text links exempt)", async () => {

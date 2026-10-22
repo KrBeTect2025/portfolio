@@ -57,14 +57,14 @@ Section labels are numbered like a route: `01 / Work`, `02 / Skills`, `03 / GitH
 
 ## 5. Components
 
-- **Scene frame.** `<ascii-art>` from ascii.rest inside a box with a fixed shape and `overflow: hidden`. Hero: 16:7 on desktop, 2:1 on phones, with gradients that fade the left, top and bottom into `ground-dusk`. Ending: the scene fills the whole contact stage behind the text and the wordmark, like `background-size: cover` anchored to the bottom (never more than 4 times the stage width), its top and bottom fading into `ground-night`. The contact text sits on top of it.
+- **Scene frame.** `<ascii-art>` from ascii.rest inside a box with a fixed shape and `overflow: hidden`. Hero: 16:7 on desktop with the text over its dark left edge; on phones the page opens with the scene (2:1, full width) and the text follows below it. Gradients fade the left, top and bottom into `ground-dusk`. Ending: sized like `background-size: cover` anchored to the bottom (never more than 4 times the page width), its top and bottom fading into `ground-night`. On wide screens it sits behind the contact text and the wordmark, and the text sits on top of it. On phones (640 px and under) it starts just above the wordmark and runs to the bottom of the page, under the navigation pill; the last line of the page dims it behind its words.
 - **Project card.** Label (stack), title, one paragraph, then a `Works / Not yet` or `Note` list, then links. Every card says what does not work yet.
 - **Skill compartment.** A card titled Languages, Backend and data, Front end or Practice, with its count in `accent`. Each skill is a row: the name, then in small mono the project that uses it. A skill with no project behind it does not go on the page.
 - **Contribution map.** One dot per day, 53 weeks by 7 days, month labels above, legend below, a link to the GitHub profile. Reads `data/contributions.json`, which the deploy writes daily. Days sit 16 px apart where the whole year fits, closing up to 12 px; only where 12 px does not fit (phones) does the box scroll sideways.
 - **Primary button.** Orange pill, dark text, 56 px tall, wrapped in the Star Border ring.
 - **Copy button.** Outline pill showing the address, with the Status Mark glyph and a one-word state: Copy, Copying, Copied, Blocked. It blurs the scene behind it (10 px).
 - **Contact shade.** A soft radial shade follows the contact text, and the paragraph and social links carry a dark halo, so they stay readable where the orbit passes behind them.
-- **Navigation pill.** Five mono links (work, skills, github, approach, contact) in a clear liquid-glass pill: 18 px backdrop blur with 180% saturation, a light sheen, a rim that is brighter on top, and a 46% dark tint so the words stay readable over the scenes. A brighter drop of glass sits behind the section being read and slides between links with a little overshoot. Nothing is marked in the hero.
+- **Navigation pill.** Five mono links (work, skills, github, approach, contact) in a clear liquid-glass pill: 14 px backdrop blur with 170% saturation, a faint sheen, a rim that is brighter on top, and only a 16% dark tint (keep it at 20% or less). The words carry a dark halo instead, so they stay readable over whatever passes under the glass. A brighter drop of glass sits behind the section being read; when it moves, its leading edge goes first and the trailing edge catches up. Nothing is marked in the hero. Clicking a link marks it at once and the sections passed on the way are not marked. Links get a faint highlight on hover (real pointers only) and press in slightly on tap. The pill slides away while the visitor reads down the page and comes back when they scroll up, reach the top or the bottom, or Tab into it; with motion off it never leaves.
 - **Wordmark.** "Krish" in JetBrains Mono 500, as wide as the page (font size is the stage width minus padding, divided by 2.8), at the very end of the contact stage over the Earth. Decorative, so hidden from screen readers; the name is already the h1.
 
 ## 6. Motion
@@ -79,7 +79,8 @@ Budget: the two scenes, one load effect, one arrival effect, the wordmark rise, 
 | Warm Tooltip | Contribution dots | Hover, or arrow keys after focusing the map | First tooltip waits 320 ms, the next ones open at once for 500 ms after leaving. |
 | Star Border | Email button | Once after "Say hi." resolves; loops while hovered or focused | One light travelling the outline, then it fades. |
 | Status Mark | Copy button | Click | Ring, spinning arc, then a check. |
-| (own) Section highlight | Navigation pill | The section crossing a band 40 to 45% down the screen; the page bottom counts as contact | Slides 0.5 s with a slight overshoot. |
+| (own) Section highlight | Navigation pill | The section crossing a band 40 to 45% down the screen; the page bottom counts as contact; a click | Leading edge 0.32 s, trailing edge 0.5 s, slight overshoot. |
+| (own) Pill away | Navigation pill | Scrolling down 12 px or more past half a screen; back on 12 px up, at the top or bottom, or on focus | 0.45 s slide and fade. Off with motion off. |
 | (own) Wordmark rise | "Krish" at the bottom | Scroll: 0 when its top reaches the screen bottom, 1 when it is fully in view | Letters rise from below a clip line one after another (each starts 0.15 later). |
 
 Rules: the Pause animation button (bottom of the page, remembered per visitor) and `prefers-reduced-motion` both stop every effect and hold each scene on a still frame. Scenes start only when they come within a screen of the viewport and build in idle time. With motion off the wordmark is simply in place. Never add custom cursors, scroll-jacking, parallax or a third scene.
@@ -91,7 +92,7 @@ Rules: the Pause animation button (bottom of the page, remembered per visitor) a
 | 1100 px and up | Full layout. |
 | 900 to 1100 px | GitHub split stacks. |
 | 640 to 900 px | Bento and Approach become one column. |
-| Under 640 px | Hero text moves above the scene; the hero scene becomes 2:1; the contribution map scrolls sideways inside its box and starts at the latest week; the navigation pill tightens (12 px text, then 11 px under 340 px). |
+| Under 640 px | The page opens with the hero scene (2:1), then the hero text; the ending scene moves behind the wordmark and the last line only; the contribution map scrolls sideways inside its box and starts at the latest week; the navigation pill tightens (12 px text, then 11 px under 340 px). |
 
 Touch targets are at least 44 px. The page never scrolls sideways; only the contribution map box may.
 

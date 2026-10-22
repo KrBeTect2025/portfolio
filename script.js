@@ -35,6 +35,8 @@
     motionToggle.hidden = systemReduces();
     motionToggle.textContent = paused ? "Play animation" : "Pause animation";
     if (!on) finishDecrypts();
+    // With motion off the pill stays put.
+    if (!on) setAway(false);
     updateWordmark();
   }
 
@@ -459,54 +461,107 @@
   });
 
   // ---------- Navigation pill ----------
-  // The glass pill at the bottom marks the section in the middle of the screen with a highlight
-  // that slides between links. In the hero nothing is marked.
+  // The glass pill at the bottom marks the section being read with a highlight that slides
+  // between links; in the hero nothing is marked. It slides away while the visitor reads down the
+  // page, and comes back when they scroll up, reach the top or the bottom, or Tab into it.
   var dock = $("dock"), glow = $("dockGlow");
   var dockLinks = Array.prototype.slice.call(dock.querySelectorAll("a"));
-  var currentLink = null;
+  var currentLink = null, glowLeft = null;
 
-  function placeGlow() {
-    if (!currentLink) { glow.classList.remove("is-on"); return; }
-    glow.style.width = currentLink.offsetWidth + "px";
-    glow.style.transform = "translateX(" + currentLink.offsetLeft + "px)";
+  function placeGlow(animate) {
+    if (!currentLink) { glow.classList.remove("is-on"); glowLeft = null; return; }
+    var left = currentLink.offsetLeft;
+    var right = dock.clientWidth - left - currentLink.offsetWidth;
+    // The leading edge moves first (styles.css); a first appearance or a resize just jumps.
+    glow.classList.remove("to-right", "to-left");
+    if (animate && glowLeft !== null && left !== glowLeft) glow.classList.add(left > glowLeft ? "to-right" : "to-left");
+    glow.style.left = left + "px";
+    glow.style.right = right + "px";
+    glowLeft = left;
     glow.classList.add("is-on");
   }
 
   function setCurrent(id) {
-    currentLink = null;
+    var next = null;
     dockLinks.forEach(function (a) {
       if (id && a.getAttribute("href") === "#" + id) {
         a.setAttribute("aria-current", "true");
-        currentLink = a;
+        next = a;
       } else {
         a.removeAttribute("aria-current");
       }
     });
-    placeGlow();
+    if (next === currentLink) return;
+    currentLink = next;
+    placeGlow(true);
   }
 
+  var sections = dockLinks.map(function (a) { return $(a.getAttribute("href").slice(1)); });
+  var inBand = {};
+  // The section crossing a thin band a little above the middle of the screen is the one being
+  // read; when two touch it, the later one wins. The contact section is short on tall screens,
+  // so the bottom of the page counts as contact.
+  function pickCurrent() {
+    var id = null;
+    sections.forEach(function (s) { if (inBand[s.id]) id = s.id; });
+    if (window.innerHeight + window.scrollY >= root.scrollHeight - 2) id = "contact";
+    setCurrent(id);
+  }
   if ("IntersectionObserver" in window) {
-    var sections = dockLinks.map(function (a) { return $(a.getAttribute("href").slice(1)); });
-    var inBand = {}, spyFrame = 0;
-    // The band is a thin strip a little above the middle of the screen; the section crossing it
-    // is the one being read. When two touch it, the later one wins.
-    var pickCurrent = function () {
-      var id = null;
-      sections.forEach(function (s) { if (inBand[s.id]) id = s.id; });
-      // The contact section is short on tall screens, so the bottom of the page counts as contact.
-      if (window.innerHeight + window.scrollY >= root.scrollHeight - 2) id = "contact";
-      if (currentLink !== (id ? dock.querySelector('a[href="#' + id + '"]') : null)) setCurrent(id);
-    };
     var spy = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) { inBand[en.target.id] = en.isIntersecting; });
-      pickCurrent();
+      if (!navigating) pickCurrent();
     }, { rootMargin: "-40% 0px -55% 0px" });
     sections.forEach(function (s) { spy.observe(s); });
-    window.addEventListener("scroll", function () {
-      if (!spyFrame) spyFrame = requestAnimationFrame(function () { spyFrame = 0; pickCurrent(); });
-    }, { passive: true });
   }
-  if ("ResizeObserver" in window) new ResizeObserver(placeGlow).observe(dock);
+  if ("ResizeObserver" in window) new ResizeObserver(function () { placeGlow(false); }).observe(dock);
+
+  // A click marks its link at once, and the sections passed on the way are not marked in turn.
+  // The page scrolls smoothly (styles.css); marking resumes once it settles.
+  var navigating = false, navTimer = 0;
+  function endNavigation() { navigating = false; pickCurrent(); }
+  dockLinks.forEach(function (a) {
+    a.addEventListener("click", function () {
+      setCurrent(a.getAttribute("href").slice(1));
+      setAway(false);
+      navigating = true;
+      clearTimeout(navTimer);
+      navTimer = setTimeout(endNavigation, 1200);
+    });
+  });
+
+  var away = false, lastY = window.scrollY, dockFrame = 0;
+  function setAway(on) {
+    if (on === away) return;
+    away = on;
+    dock.classList.toggle("is-away", on);
+  }
+  function onScrollFrame() {
+    dockFrame = 0;
+    var y = window.scrollY;
+    if (navigating) {
+      clearTimeout(navTimer);
+      navTimer = setTimeout(endNavigation, 160);
+    } else {
+      pickCurrent();
+    }
+    var atBottom = window.innerHeight + y >= root.scrollHeight - 2;
+    // Small movements add up until they pass 12px, so a slow drag still counts.
+    if (!motionOn() || navigating || atBottom || y < window.innerHeight / 2 || dock.contains(document.activeElement)) {
+      setAway(false);
+      lastY = y;
+    } else if (y - lastY > 12) {
+      setAway(true);
+      lastY = y;
+    } else if (lastY - y > 12) {
+      setAway(false);
+      lastY = y;
+    }
+  }
+  window.addEventListener("scroll", function () {
+    if (!dockFrame) dockFrame = requestAnimationFrame(onScrollFrame);
+  }, { passive: true });
+  dock.addEventListener("focusin", function () { setAway(false); });
 
   // ---------- Wordmark ----------
   // The big "Krish" at the bottom rises letter by letter as it scrolls into view. The CSS turns

@@ -220,32 +220,31 @@
       </section>
     </main>
 
-    <!-- 05 CONTACT: centred, on top of the Earth at sunrise. The page arrives here. -->
+    <!-- 05 CONTACT: centred over the Earth at sunrise. The page arrives here. -->
     <footer id="contact" class="sg-end">
-      <div class="sg-end-stage">
-        <!-- The scene fills the whole stage behind the text and the name. -->
-        <div class="sg-end-art"><ascii-art piece="edge-orbit" label="Animated ASCII art: the night Earth from orbit at sunrise, with requests arcing between city lights"></ascii-art></div>
-        <div class="sg-end-in">
-          <span class="sg-label"><span class="sg-num">05</span> / Contact</span>
-          <h2 class="sg-say" id="say"><span class="sg-sr">Say hi.</span><span class="sg-dec" id="sayText" aria-hidden="true">Say hi.</span></h2>
-          <p class="sg-end-text">If you have a messy document, an API that needs tests, or a role to fill, email me.</p>
-          <!-- TODO(you): put your real email address in the mailto link below. The copy button
-               reads the address from that link, so it is the only place to change. -->
-          <div class="sg-cta">
-            <span class="sg-star" id="star"><a class="sg-btn" id="emailLink" href="mailto:you@example.com">Email me<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a></span>
-            <button type="button" class="sg-copy" id="copyEmail" data-copy="idle" hidden><svg class="sg-sm" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><circle class="sg-sm-ring" cx="10" cy="10" r="8"/><path class="sg-sm-check" d="M6 10.5l2.6 2.6L14 7.6"/></svg><span class="sg-mono sg-copy-addr" id="copyAddr">you@example.com</span><span class="sg-copy-msg" id="copyMsg">Copy</span></button>
-            <span class="sg-sr" id="copyLive" aria-live="polite"></span>
-          </div>
-          <div class="sg-socials">
-            <a class="sg-link" href="https://github.com/KrBeTect2025" target="_blank" rel="noopener" aria-describedby="newTab">GitHub</a>
-            <!-- TODO(you): add your LinkedIn URL or delete this line. -->
-            <a class="sg-link" href="https://www.linkedin.com/" target="_blank" rel="noopener" aria-describedby="newTab">LinkedIn</a>
-          </div>
+      <!-- On wide screens the scene sits behind the contact text and the name; on phones only
+           behind the name and the last line (styles.css, .sg-end-art). -->
+      <div class="sg-end-art"><ascii-art piece="edge-orbit" label="Animated ASCII art: the night Earth from orbit at sunrise, with requests arcing between city lights"></ascii-art></div>
+      <div class="sg-end-in">
+        <span class="sg-label"><span class="sg-num">05</span> / Contact</span>
+        <h2 class="sg-say" id="say"><span class="sg-sr">Say hi.</span><span class="sg-dec" id="sayText" aria-hidden="true">Say hi.</span></h2>
+        <p class="sg-end-text">If you have a messy document, an API that needs tests, or a role to fill, email me.</p>
+        <!-- TODO(you): put your real email address in the mailto link below. The copy button
+             reads the address from that link, so it is the only place to change. -->
+        <div class="sg-cta">
+          <span class="sg-star" id="star"><a class="sg-btn" id="emailLink" href="mailto:you@example.com">Email me<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a></span>
+          <button type="button" class="sg-copy" id="copyEmail" data-copy="idle" hidden><svg class="sg-sm" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><circle class="sg-sm-ring" cx="10" cy="10" r="8"/><path class="sg-sm-check" d="M6 10.5l2.6 2.6L14 7.6"/></svg><span class="sg-mono sg-copy-addr" id="copyAddr">you@example.com</span><span class="sg-copy-msg" id="copyMsg">Copy</span></button>
+          <span class="sg-sr" id="copyLive" aria-live="polite"></span>
         </div>
-        <!-- The first name again, very large, rising into place as the page reaches its end.
-             Decoration only: the full name is in the h1 at the top. -->
-        <p class="sg-wordmark" id="wordmark" aria-hidden="true"><span style="--i: 0">K</span><span style="--i: 1">r</span><span style="--i: 2">i</span><span style="--i: 3">s</span><span style="--i: 4">h</span></p>
+        <div class="sg-socials">
+          <a class="sg-link" href="https://github.com/KrBeTect2025" target="_blank" rel="noopener" aria-describedby="newTab">GitHub</a>
+          <!-- TODO(you): add your LinkedIn URL or delete this line. -->
+          <a class="sg-link" href="https://www.linkedin.com/" target="_blank" rel="noopener" aria-describedby="newTab">LinkedIn</a>
+        </div>
       </div>
+      <!-- The first name again, very large, rising into place as the page reaches its end.
+           Decoration only: the full name is in the h1 at the top. -->
+      <p class="sg-wordmark" id="wordmark" aria-hidden="true"><span style="--i: 0">K</span><span style="--i: 1">r</span><span style="--i: 2">i</span><span style="--i: 3">s</span><span style="--i: 4">h</span></p>
       <div class="sg-label sg-bottom">
         <span>Krish Rathore, 2026</span>
         <span>Scenes by <a class="sg-credit" href="https://ascii.rest" target="_blank" rel="noopener" aria-describedby="newTab">ascii.rest</a></span>
