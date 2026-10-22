@@ -175,8 +175,7 @@
             <span class="sg-label"><span class="sg-num">03</span> / GitHub</span>
             <h2 class="sg-h2" id="github-title">On GitHub</h2>
             <dl class="sg-stats" id="ghStats" hidden>
-              <div><dt>contributions in the last year</dt><dd id="ghTotal"></dd></div>
-              <div><dt>in the last 30 days</dt><dd id="ghRecent" class="sg-accent"></dd></div>
+              <div><dt>contributions in the last 30 days</dt><dd id="ghRecent" class="sg-accent"></dd></div>
               <div><dt id="ghStreakLabel">day streak</dt><dd id="ghStreak"></dd></div>
             </dl>
           </div>
@@ -190,10 +189,12 @@
               </div>
             </div>
             <p class="sg-sr" id="ghLive" aria-live="polite"></p>
-            <div class="sg-gh-foot">
+            <!-- Like GitHub's own map: the year's total on the left, the key on the right. -->
+            <div class="sg-gh-foot" id="ghFoot">
+              <p class="sg-gh-count" id="ghCount" hidden><span id="ghTotal"></span> <span id="ghTotalLabel">contributions in the last year</span></p>
               <p class="sg-gh-note" id="ghNote">My daily contributions are on GitHub.</p>
               <div class="sg-gh-meta">
-                <span class="sg-legend" id="ghLegend" aria-hidden="true" hidden>less<span class="sg-d"></span><span class="sg-d l1"></span><span class="sg-d l2"></span><span class="sg-d l3"></span><span class="sg-d l4"></span>more</span>
+                <span class="sg-legend" id="ghLegend" aria-hidden="true" hidden>Less<span class="sg-d"></span><span class="sg-d l1"></span><span class="sg-d l2"></span><span class="sg-d l3"></span><span class="sg-d l4"></span>More</span>
                 <a class="sg-link sg-link--sm" href="https://github.com/KrBeTect2025" target="_blank" rel="noopener" aria-describedby="newTab">KrBeTect2025<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
               </div>
             </div>
