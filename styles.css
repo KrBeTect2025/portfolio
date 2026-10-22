@@ -234,7 +234,17 @@ h1, h2, h3 { font-weight: 500; }
 }
 /* The first name, as wide as the page, rising letter by letter as the page reaches its end.
    script.js sets --p from 0 to 1 while scrolling; without it (or with motion off) it stays at 1. */
-.sg-wordmark { --p: 1; grid-row: 2; position: relative; z-index: 1; display: flex; justify-content: center; margin: clamp(64px, 8vw, 128px) 48px 0; padding-top: .06em; overflow: hidden; font-family: var(--mono); font-weight: 500; font-size: 18vw; font-size: calc((100cqw - 96px) / 2.8); line-height: .86; letter-spacing: -.06em; color: var(--ink); user-select: none; }
+.sg-wordmark { --p: 1; grid-row: 2; position: relative; z-index: 1; display: flex; justify-content: center; margin: clamp(64px, 8vw, 128px) 48px 0; padding-top: .06em; overflow: hidden; font-family: var(--mono); font-weight: 500; font-size: 18vw; font-size: calc((100cqw - 96px) / 2.62); line-height: .86; color: var(--ink); user-select: none; }
+/* Monospace letters all have the same width, so "Krish" set as is has uneven gaps (a tight i-s, a
+   wide s-h) and more room on its left than its right. These margins, measured from JetBrains Mono's
+   outlines, even out the space between the letters and trim the side bearings, so the letters span
+   2.61em edge to edge and sit exactly centred. Above phone width the K then starts at the page's
+   left margin and the h ends at its right margin, in line with the last line below. */
+.sg-wordmark span:nth-child(1) { margin-left: -.084em; }
+.sg-wordmark span:nth-child(2) { margin-left: -.048em; }
+.sg-wordmark span:nth-child(3) { margin-left: -.088em; }
+.sg-wordmark span:nth-child(4) { margin-left: -.042em; }
+.sg-wordmark span:nth-child(5) { margin-left: -.045em; margin-right: -.082em; }
 .sg-wordmark span { --pi: clamp(0, calc(var(--p) * 1.6 - var(--i) * .15), 1); display: block; opacity: var(--pi); transform: translateY(calc((1 - var(--pi)) * 110%)); transition: transform .35s cubic-bezier(.2, .7, .2, 1), opacity .35s; }
 /* ---------- Fade in on scroll ----------
    script.js marks blocks below the hero with .sg-rv and adds .is-in as each one comes into view,
@@ -244,8 +254,12 @@ h1, h2, h3 { font-weight: 500; }
 .sg-anim .sg-rv.is-in { opacity: 1; transform: none; transition: opacity .9s cubic-bezier(.2, .7, .2, 1) var(--rv-d, 0s), transform .9s cubic-bezier(.2, .7, .2, 1) var(--rv-d, 0s); }
 
 /* Room at the bottom so the navigation pill never covers this row. */
-.sg-bottom { grid-row: 3; position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0 24px; padding: 16px 48px calc(96px + env(safe-area-inset-bottom, 0px)); }
-.sg-bottom-end { display: flex; flex-wrap: wrap; gap: 0 24px; }
+/* Three columns with equal sides, so the credit in the middle sits on the page's centre line
+   whatever the widths of the two ends. */
+.sg-bottom { grid-row: 3; position: relative; z-index: 1; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 0 24px; padding: 16px 48px calc(96px + env(safe-area-inset-bottom, 0px)); }
+.sg-bottom > :first-child { justify-self: start; }
+.sg-bottom > :nth-child(2) { justify-self: center; text-align: center; }
+.sg-bottom-end { justify-self: end; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0 24px; }
 .sg-bottom .sg-nav { font-size: 12px; }
 .sg-credit { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 .sg-motion { padding: 0; border: 0; background: none; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
@@ -294,6 +308,9 @@ h1, h2, h3 { font-weight: 500; }
   .sg-bento { grid-template-columns: minmax(0, 1fr); }
   .sg-bento > * { grid-column: auto; grid-row: auto; }
   .sg-how { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  /* Too narrow for three equal columns without wrapping the ends: one centred item per line, as on phones. */
+  .sg-bottom { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+  .sg-bottom-end { justify-content: center; }
 }
 @media (max-width: 640px) {
   .sg-sec, .sg-bottom { padding-left: 20px; padding-right: 20px; }
@@ -323,9 +340,10 @@ h1, h2, h3 { font-weight: 500; }
     top: calc(var(--edge) - var(--w) * .23); bottom: auto; width: var(--w);
   }
   .sg-end-art::after { background: linear-gradient(180deg, #04060C 0%, rgba(4, 6, 12, 0) 26%), linear-gradient(0deg, #04060C 0%, rgba(4, 6, 12, 0) 10%); }
+  /* Phones keep the earlier size: the ending scene is lined up with these letters (above). */
   .sg-wordmark { margin: 150px 20px 0; font-size: calc((100cqw - 40px) / 2.8); }
   /* The last line is centred under the centred name, one item per line. */
-  .sg-bottom { flex-direction: column; align-items: center; gap: 2px; padding-top: 20px; text-align: center; }
+  .sg-bottom { display: flex; flex-direction: column; align-items: center; gap: 2px; padding-top: 20px; text-align: center; }
   .sg-bottom-end { justify-content: center; gap: 0 28px; }
   /* A soft shade behind the small words only, so the arcs passing under them do not break them up. */
   .sg-bottom::before { content: ''; position: absolute; z-index: -1; left: 6%; right: 6%; top: 0; height: 132px; pointer-events: none; background: radial-gradient(closest-side, rgba(4, 6, 12, .78), rgba(4, 6, 12, .5) 60%, rgba(4, 6, 12, 0)); }
