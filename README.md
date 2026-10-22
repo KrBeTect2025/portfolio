@@ -10,8 +10,8 @@ dependencies (fonts load from Google Fonts, with system fallbacks).
 - `index.html`: all the words and links on the page.
 - `styles.css`: colours, type and layout. The colour tokens are at the top.
 - `script.js`: the small effects (the name and "Say hi." scrambling into place, the card
-  spotlight, the copy button, the big "Krish" rising at the bottom, the highlight in the
-  navigation pill), the Pause animation button, and the contribution map.
+  spotlight, the copy button, blocks fading in as they come into view, the big "Krish" rising at
+  the bottom, the highlight in the navigation pill), the Pause animation button, and the contribution map.
 - `vendor/ascii-rest/`: the two animated scenes, "cloud sea" and "edge orbit", copied from
   [ascii.rest](https://ascii.rest) by [@bas3line](https://github.com/bas3line/ascii) under the MIT
   licence (kept in that folder). They are vendored, not loaded from ascii.rest, so the site never
@@ -44,8 +44,8 @@ remembered. With motion off, the big "Krish" at the bottom simply stands in plac
 loading without errors, the page head and preview image, forced dark mode, section order, the
 skip link, the contribution map (numbers, weekdays, tooltip, keyboard, missing or broken data),
 the effects, the copy button, reduced motion and the Pause button, the navigation pill (place,
-clear glass, section highlight, sliding away and back, never covering the footer), where the
-edge orbit scene sits on phones and wide screens, the "Krish" rise, sideways scrolling at 19 screen widths, touch target sizes, an accessibility scan (axe) on desktop and phone, and a check
+10% fill and no glass, section highlight, sliding away and back, never covering the footer), where the
+edge orbit scene sits on phones and wide screens, the "Krish" rise, the fade-ins, sideways scrolling at 19 screen widths, touch target sizes, an accessibility scan (axe) on desktop and phone, and a check
 that the deploy workflow publishes every file the page loads.
 
 ```

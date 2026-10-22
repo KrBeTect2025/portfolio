@@ -57,19 +57,19 @@ Section labels are numbered like a route: `01 / Work`, `02 / Skills`, `03 / GitH
 
 ## 5. Components
 
-- **Scene frame.** `<ascii-art>` from ascii.rest inside a box with a fixed shape and `overflow: hidden`. Hero: 16:7 on desktop with the text over its dark left edge; on phones the page opens with the scene (2:1, full width) and the text follows below it. Gradients fade the left, top and bottom into `ground-dusk`. Ending: sized like `background-size: cover` anchored to the bottom (never more than 4 times the page width), its top and bottom fading into `ground-night`. On wide screens it sits behind the contact text and the wordmark, and the text sits on top of it. On phones (640 px and under) it starts just above the wordmark and runs to the bottom of the page, under the navigation pill; the last line of the page dims it behind its words.
+- **Scene frame.** `<ascii-art>` from ascii.rest inside a box with a fixed shape and `overflow: hidden`. Hero: 16:7 on desktop with the text over its dark left edge; on phones the page opens with the scene (2:1, full width) and the text follows below it. Gradients fade the left, top and bottom into `ground-dusk`. Ending: sized like `background-size: cover` anchored to the bottom (never more than 4 times the page width), its top and bottom fading into `ground-night`. On wide screens it sits behind the contact text and the wordmark, and the text sits on top of it. On phones (640 px and under) it starts 150 px above the wordmark and runs to the bottom of the page, under the navigation pill. There it is drawn larger (at least 2.7 times the screen width) and lined up with the name instead of the bottom: the Earth's glowing edge crosses "Krish" 40% of the way down its letters. The last line is centred, one item per line, with a soft shade behind its words.
 - **Project card.** Label (stack), title, one paragraph, then a `Works / Not yet` or `Note` list, then links. Every card says what does not work yet.
 - **Skill compartment.** A card titled Languages, Backend and data, Front end or Practice, with its count in `accent`. Each skill is a row: the name, then in small mono the project that uses it. A skill with no project behind it does not go on the page.
 - **Contribution map.** One dot per day, 53 weeks by 7 days, month labels above, legend below, a link to the GitHub profile. Reads `data/contributions.json`, which the deploy writes daily. Days sit 16 px apart where the whole year fits, closing up to 12 px; only where 12 px does not fit (phones) does the box scroll sideways.
 - **Primary button.** Orange pill, dark text, 56 px tall, wrapped in the Star Border ring.
 - **Copy button.** Outline pill showing the address, with the Status Mark glyph and a one-word state: Copy, Copying, Copied, Blocked. It blurs the scene behind it (10 px).
 - **Contact shade.** A soft radial shade follows the contact text, and the paragraph and social links carry a dark halo, so they stay readable where the orbit passes behind them.
-- **Navigation pill.** Five mono links (work, skills, github, approach, contact) in a clear liquid-glass pill: 14 px backdrop blur with 170% saturation, a faint sheen, a rim that is brighter on top, and only a 16% dark tint (keep it at 20% or less). The words carry a dark halo instead, so they stay readable over whatever passes under the glass. A brighter drop of glass sits behind the section being read; when it moves, its leading edge goes first and the trailing edge catches up. Nothing is marked in the hero. Clicking a link marks it at once and the sections passed on the way are not marked. Links get a faint highlight on hover (real pointers only) and press in slightly on tap. The pill slides away while the visitor reads down the page and comes back when they scroll up, reach the top or the bottom, or Tab into it; with motion off it never leaves.
+- **Navigation pill.** Five mono links (work, skills, github, approach, contact) in a minimal pill: a flat 10% white fill and nothing else (no blur, sheen, rim or shadow; keep the fill at 10% or less). The words carry a soft dark halo so they stay apart from anything passing under the pill. A second 10% layer sits behind the section being read and slides between links (0.4 s, no overshoot). Nothing is marked in the hero. Clicking a link marks it at once and the sections passed on the way are not marked. Links get a faint highlight on hover (real pointers only) and press in slightly on tap. The pill slides away while the visitor reads down the page and comes back when they scroll up, reach the top or the bottom, or Tab into it; with motion off it never leaves.
 - **Wordmark.** "Krish" in JetBrains Mono 500, as wide as the page (font size is the stage width minus padding, divided by 2.8), at the very end of the contact stage over the Earth. Decorative, so hidden from screen readers; the name is already the h1.
 
 ## 6. Motion
 
-Budget: the two scenes, one load effect, one arrival effect, the wordmark rise, and hover or focus feedback. The wordmark is the only thing tied to scroll position.
+Budget: the two scenes, one load effect, one arrival effect, the fade-in of blocks as they come into view, the wordmark rise, and hover or focus feedback. The wordmark is the only thing tied to scroll position; the fade-ins play once.
 
 | Effect (React Bits name) | Where | Trigger | Notes |
 |---|---|---|---|
@@ -79,9 +79,10 @@ Budget: the two scenes, one load effect, one arrival effect, the wordmark rise, 
 | Warm Tooltip | Contribution dots | Hover, or arrow keys after focusing the map | First tooltip waits 320 ms, the next ones open at once for 500 ms after leaving. |
 | Star Border | Email button | Once after "Say hi." resolves; loops while hovered or focused | One light travelling the outline, then it fades. |
 | Status Mark | Copy button | Click | Ring, spinning arc, then a check. |
-| (own) Section highlight | Navigation pill | The section crossing a band 40 to 45% down the screen; the page bottom counts as contact; a click | Leading edge 0.32 s, trailing edge 0.5 s, slight overshoot. |
+| (own) Section highlight | Navigation pill | The section crossing a band 40 to 45% down the screen; the page bottom counts as contact; a click | Slides 0.4 s, ease out. |
 | (own) Pill away | Navigation pill | Scrolling down 12 px or more past half a screen; back on 12 px up, at the top or bottom, or on focus | 0.45 s slide and fade. Off with motion off. |
-| (own) Wordmark rise | "Krish" at the bottom | Scroll: 0 when its top reaches the screen bottom, 1 when it is fully in view | Letters rise from below a clip line one after another (each starts 0.15 later). |
+| (own) Wordmark rise | "Krish" at the bottom | Scroll: 0 when its top reaches the screen bottom, 1 when it is fully in view | Letters rise and fade in from below a clip line one after another (each starts 0.15 later). |
+| (own) Fade in | Section heads, cards, GitHub numbers and map, Approach text and rules, contact text (not the hero, "Say hi." or the wordmark) | Comes into view, once | 20 px rise and fade, 0.9 s; blocks side by side follow each other by 0.09 s. Nothing is hidden without JavaScript or with motion off. |
 
 Rules: the Pause animation button (bottom of the page, remembered per visitor) and `prefers-reduced-motion` both stop every effect and hold each scene on a still frame. Scenes start only when they come within a screen of the viewport and build in idle time. With motion off the wordmark is simply in place. Never add custom cursors, scroll-jacking, parallax or a third scene.
 
@@ -112,9 +113,9 @@ Touch targets are at least 44 px. The page never scrolls sideways; only the cont
 - Do keep every claim checkable: numbers come from tests or from the GitHub data file.
 - Do credit ascii.rest in the footer and keep its MIT licence with the copied files.
 - Don't load scenes from ascii.rest at runtime; vendor them.
-- Don't add a second accent, gradients on text or emoji. Glass is for the navigation pill only (and the light blur behind the copy button).
+- Don't add a second accent, gradients on text or emoji. No glass: the only blur is the light one behind the copy button.
 - Don't add more scroll-linked motion than the wordmark, or more than one effect to an element.
 
 ## 10. Prompt guide for an AI agent
 
-"Build [page] for Krish Rathore's portfolio using DESIGN.md. Dark grounds #0E0E0F to #04060C, one orange accent #F38020, Instrument Sans with JetBrains Mono labels, numbered section labels, 16 px cards with hairline borders, the glass navigation pill at the bottom and no top bar. No new motion beyond the table in section 6. Plain HTML, CSS and JavaScript, no framework."
+"Build [page] for Krish Rathore's portfolio using DESIGN.md. Dark grounds #0E0E0F to #04060C, one orange accent #F38020, Instrument Sans with JetBrains Mono labels, numbered section labels, 16 px cards with hairline borders, the minimal 10% navigation pill at the bottom and no top bar. No new motion beyond the table in section 6. Plain HTML, CSS and JavaScript, no framework."

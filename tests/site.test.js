@@ -156,6 +156,9 @@ function tipText(day) {
     const control = await pixel("#c", 20, 20);
     if (control[0] > 128) note("forced dark", "This Chromium did not force dark on a white control page, so the real-page check proves nothing here.");
     await p.goto(BASE);
+    // Let the contact block finish fading in first.
+    await p.locator(".sg-btn").scrollIntoViewIfNeeded();
+    await p.waitForFunction(() => !document.querySelector(".sg-cta.sg-rv"), null, { timeout: 4000 });
     const btn = await pixel(".sg-btn", 6, 28);   // the orange pill's left edge, inside the button
     assert(Math.abs(btn[0] - 243) < 12 && Math.abs(btn[1] - 128) < 12 && Math.abs(btn[2] - 32) < 12, "Email button recoloured under forced dark: rgb(" + btn + ")");
     await forced.close();
@@ -532,7 +535,7 @@ function tipText(day) {
     assert(!bad.length, bad.join(", "));
   });
 
-  await test("no top bar; a clear glass pill sits at the bottom centre", async () => {
+  await test("no top bar; a minimal pill (10% fill, no glass) sits at the bottom centre", async () => {
     for (const vp of [{ width: 320, height: 640 }, { width: 375, height: 812 }, { width: 768, height: 1024 }, { width: 1440, height: 900 }]) {
       const page = await newPage({ viewport: vp }); await page.goto(BASE);
       const top = await page.evaluate(() => {
@@ -544,8 +547,9 @@ function tipText(day) {
       });
       const where = `${vp.width}px ${JSON.stringify(top)}`;
       assert(top.header === 0, "a header is back: " + where);
-      assert(top.pos === "fixed" && /blur/.test(top.glass), "not a fixed glass pill: " + where);
-      assert(top.tint <= 0.2, "the glass is tinted too dark: " + where);
+      assert(top.pos === "fixed", "not fixed: " + where);
+      assert(!/blur/.test(top.glass || ""), "glass blur is back: " + where);
+      assert(top.tint <= 0.1, "fill is more than 10%: " + where);
       assert(Math.abs(top.gap - 16) <= 1, "not 16px above the bottom: " + where);
       assert(Math.abs(top.left - top.right) <= 1 && top.left >= 8, "not centred inside the screen: " + where);
       assert(top.links.length === 5 && top.links.every(h => h >= 44), "links under 44px: " + where);
@@ -643,6 +647,10 @@ function tipText(day) {
       const page = await newPage({ viewport: vp }); await page.goto(BASE);
       await page.evaluate(() => document.getElementById("wordmark").scrollIntoView({ block: "center", behavior: "instant" }));
       await page.waitForSelector(".sg-end-art canvas", { timeout: 8000 });
+      // Layout only: let the fade-ins in view finish (they move blocks 20px while they play), and
+      // skip the ones out of view.
+      await page.waitForFunction(() => !document.querySelector(".sg-rv.is-in"), null, { timeout: 4000 });
+      await page.evaluate(() => document.querySelectorAll(".sg-rv").forEach(el => el.classList.remove("sg-rv")));
       const r = await page.evaluate(() => {
         const box = el => el.getBoundingClientRect();
         const art = box(document.querySelector(".sg-end-art")), cv = box(document.querySelector(".sg-end-art canvas"));
@@ -707,6 +715,30 @@ function tipText(day) {
       const p2 = await newPage(opts); await p2.goto(BASE);
       const ty = await p2.$$eval("#wordmark span", ss => ss.map(s => Math.round(new DOMMatrix(getComputedStyle(s).transform).m42)));
       assert(ty.every(t => t === 0), JSON.stringify(opts) + ": " + ty);
+      await p2.context().close();
+    }
+  });
+
+  await test("blocks below the hero fade in as they scroll into view, then hold; nothing is hidden with motion off", async () => {
+    const page = await newPage(); await page.goto(BASE); await mapReady(page);
+    let r = await page.evaluate(() => ({
+      marked: document.querySelectorAll(".sg-rv").length,
+      hero: document.querySelectorAll(".sg-hero .sg-rv, .sg-say.sg-rv, .sg-wordmark.sg-rv").length,
+      rules: getComputedStyle(document.querySelector(".sg-rules li")).opacity,
+    }));
+    assert(r.marked >= 15 && r.hero === 0 && r.rules === "0", "before scrolling: " + JSON.stringify(r));
+    await page.evaluate(() => document.getElementById("approach").scrollIntoView({ behavior: "instant" }));
+    await sleep(1700);
+    r = await page.evaluate(() => {
+      const li = document.querySelector(".sg-rules li");
+      return { cls: li.className, opacity: getComputedStyle(li).opacity, transform: getComputedStyle(li).transform, cardTransition: getComputedStyle(document.querySelector(".sg-skills .sg-card")).transitionProperty };
+    });
+    assert(r.cls === "" && r.opacity === "1" && r.transform === "none", "after scrolling in: " + JSON.stringify(r));
+    await page.context().close();
+    for (const opts of [{ reducedMotion: "reduce" }, { javaScriptEnabled: false }]) {
+      const p2 = await newPage(opts); await p2.goto(BASE);
+      const hidden = await p2.$$eval(".sg-head, .sg-card, .sg-rules li, .sg-cta", els => els.filter(e => getComputedStyle(e).opacity !== "1").length);
+      assert(hidden === 0, JSON.stringify(opts) + ": " + hidden + " blocks hidden");
       await p2.context().close();
     }
   });

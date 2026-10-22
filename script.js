@@ -470,14 +470,11 @@
 
   function placeGlow(animate) {
     if (!currentLink) { glow.classList.remove("is-on"); glowLeft = null; return; }
-    var left = currentLink.offsetLeft;
-    var right = dock.clientWidth - left - currentLink.offsetWidth;
-    // The leading edge moves first (styles.css); a first appearance or a resize just jumps.
-    glow.classList.remove("to-right", "to-left");
-    if (animate && glowLeft !== null && left !== glowLeft) glow.classList.add(left > glowLeft ? "to-right" : "to-left");
-    glow.style.left = left + "px";
-    glow.style.right = right + "px";
-    glowLeft = left;
+    // It slides from link to link; a first appearance or a resize just jumps into place.
+    glow.classList.toggle("is-jump", !animate || glowLeft === null);
+    glowLeft = currentLink.offsetLeft;
+    glow.style.width = currentLink.offsetWidth + "px";
+    glow.style.transform = "translateX(" + glowLeft + "px)";
     glow.classList.add("is-on");
   }
 
@@ -562,6 +559,33 @@
     if (!dockFrame) dockFrame = requestAnimationFrame(onScrollFrame);
   }, { passive: true });
   dock.addEventListener("focusin", function () { setAway(false); });
+
+  // ---------- Fade in on scroll ----------
+  // Each block below the hero fades up as it comes into view, once; blocks side by side follow
+  // each other by 90 ms. "Say hi." and the big name have their own entrances, so they are left out.
+  // When it is done the classes come off again, so the blocks keep their own transitions.
+  if (motionOn() && "IntersectionObserver" in window) {
+    var revealed = document.querySelectorAll(".sg-head, .sg-bento > .sg-card, .sg-skills > .sg-card, .sg-gh > div:first-child > :not(dl), .sg-stats > div, .sg-gh-map, .sg-how > div:first-child > *, .sg-rules > li, .sg-end-in > :not(.sg-say)");
+    var settle = function (el) {
+      el.classList.remove("sg-rv", "is-in");
+      el.style.removeProperty("--rv-d");
+    };
+    var revealer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        var el = en.target;
+        revealer.unobserve(el);
+        el.classList.add("is-in");
+        setTimeout(function () { settle(el); }, 1400);
+      });
+    }, { rootMargin: "0px 0px -6% 0px" });
+    Array.prototype.forEach.call(revealed, function (el) {
+      var order = Array.prototype.filter.call(el.parentNode.children, function (c) { return c.classList.contains("sg-rv"); }).length;
+      el.classList.add("sg-rv");
+      if (order) el.style.setProperty("--rv-d", Math.min(order, 4) * 0.09 + "s");
+      revealer.observe(el);
+    });
+  }
 
   // ---------- Wordmark ----------
   // The big "Krish" at the bottom rises letter by letter as it scrolls into view. The CSS turns
