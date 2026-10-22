@@ -52,20 +52,24 @@ Section labels are numbered like a route: `01 / Work`, `02 / Skills`, `03 / GitH
 - Work is a 3-column bento: the headline project spans 2 columns and 2 rows.
 - Skills is four equal compartments in a row (2 by 2 below 1100 px, stacked under 640 px).
 - GitHub and Approach are two-column splits (4:8 and 5:7) that stack below 1100 px and 900 px.
-- No shadows except the busiest contribution dot's glow. Depth comes from the two grounds and the scenes.
+- No shadows except the busiest contribution dot's glow and the navigation pill. Depth comes from the two grounds and the scenes.
+- There is no top bar. Navigation is the glass pill fixed 16 px above the bottom of the screen (plus the safe area on phones), so the page bottom keeps 96 px of padding to stay clear of it.
 
 ## 5. Components
 
-- **Scene frame.** `<ascii-art>` from ascii.rest inside a box with a fixed shape and `overflow: hidden`. Hero: 16:7 on desktop, 2:1 on phones, with gradients that fade the left, top and bottom into `ground-dusk`. Ending: 2:1, full width, its top fading into `ground-night`, with the closing text overlapping the star field above the Earth.
+- **Scene frame.** `<ascii-art>` from ascii.rest inside a box with a fixed shape and `overflow: hidden`. Hero: 16:7 on desktop, 2:1 on phones, with gradients that fade the left, top and bottom into `ground-dusk`. Ending: the scene fills the whole contact stage behind the text and the wordmark, like `background-size: cover` anchored to the bottom (never more than 4 times the stage width), its top and bottom fading into `ground-night`. The contact text sits on top of it.
 - **Project card.** Label (stack), title, one paragraph, then a `Works / Not yet` or `Note` list, then links. Every card says what does not work yet.
 - **Skill compartment.** A card titled Languages, Backend and data, Front end or Practice, with its count in `accent`. Each skill is a row: the name, then in small mono the project that uses it. A skill with no project behind it does not go on the page.
 - **Contribution map.** One dot per day, 53 weeks by 7 days, month labels above, legend below, a link to the GitHub profile. Reads `data/contributions.json`, which the deploy writes daily. Days sit 16 px apart where the whole year fits, closing up to 12 px; only where 12 px does not fit (phones) does the box scroll sideways.
 - **Primary button.** Orange pill, dark text, 56 px tall, wrapped in the Star Border ring.
-- **Copy button.** Outline pill showing the address, with the Status Mark glyph and a one-word state: Copy, Copying, Copied, Blocked.
+- **Copy button.** Outline pill showing the address, with the Status Mark glyph and a one-word state: Copy, Copying, Copied, Blocked. It blurs the scene behind it (10 px).
+- **Contact shade.** A soft radial shade follows the contact text, and the paragraph and social links carry a dark halo, so they stay readable where the orbit passes behind them.
+- **Navigation pill.** Five mono links (work, skills, github, approach, contact) in a clear liquid-glass pill: 18 px backdrop blur with 180% saturation, a light sheen, a rim that is brighter on top, and a 46% dark tint so the words stay readable over the scenes. A brighter drop of glass sits behind the section being read and slides between links with a little overshoot. Nothing is marked in the hero.
+- **Wordmark.** "Krish" in JetBrains Mono 500, as wide as the page (font size is the stage width minus padding, divided by 2.8), at the very end of the contact stage over the Earth. Decorative, so hidden from screen readers; the name is already the h1.
 
 ## 6. Motion
 
-Budget: the two scenes, one load effect, one arrival effect, and hover or focus feedback. Nothing is tied to scroll position.
+Budget: the two scenes, one load effect, one arrival effect, the wordmark rise, and hover or focus feedback. The wordmark is the only thing tied to scroll position.
 
 | Effect (React Bits name) | Where | Trigger | Notes |
 |---|---|---|---|
@@ -75,8 +79,10 @@ Budget: the two scenes, one load effect, one arrival effect, and hover or focus 
 | Warm Tooltip | Contribution dots | Hover, or arrow keys after focusing the map | First tooltip waits 320 ms, the next ones open at once for 500 ms after leaving. |
 | Star Border | Email button | Once after "Say hi." resolves; loops while hovered or focused | One light travelling the outline, then it fades. |
 | Status Mark | Copy button | Click | Ring, spinning arc, then a check. |
+| (own) Section highlight | Navigation pill | The section crossing a band 40 to 45% down the screen; the page bottom counts as contact | Slides 0.5 s with a slight overshoot. |
+| (own) Wordmark rise | "Krish" at the bottom | Scroll: 0 when its top reaches the screen bottom, 1 when it is fully in view | Letters rise from below a clip line one after another (each starts 0.15 later). |
 
-Rules: the Pause animation button (bottom of the page, remembered per visitor) and `prefers-reduced-motion` both stop every effect and hold each scene on a still frame. Scenes start only when they come within a screen of the viewport and build in idle time. Never add custom cursors, scroll-jacking, parallax or a third scene.
+Rules: the Pause animation button (bottom of the page, remembered per visitor) and `prefers-reduced-motion` both stop every effect and hold each scene on a still frame. Scenes start only when they come within a screen of the viewport and build in idle time. With motion off the wordmark is simply in place. Never add custom cursors, scroll-jacking, parallax or a third scene.
 
 ## 7. Responsive
 
@@ -85,7 +91,7 @@ Rules: the Pause animation button (bottom of the page, remembered per visitor) a
 | 1100 px and up | Full layout. |
 | 900 to 1100 px | GitHub split stacks. |
 | 640 to 900 px | Bento and Approach become one column. |
-| Under 640 px | Hero text moves above the scene; scenes become 2:1; the contribution map scrolls sideways inside its box and starts at the latest week. |
+| Under 640 px | Hero text moves above the scene; the hero scene becomes 2:1; the contribution map scrolls sideways inside its box and starts at the latest week; the navigation pill tightens (12 px text, then 11 px under 340 px). |
 
 Touch targets are at least 44 px. The page never scrolls sideways; only the contribution map box may.
 
@@ -96,7 +102,8 @@ Touch targets are at least 44 px. The page never scrolls sideways; only the cont
 - The contribution map is one tab stop with a summary label; arrow keys, Home and End move day by day, and each day is announced.
 - Animated text keeps its real words in `aria-label`; the scrambled letters are hidden from screen readers.
 - Copy results are announced in a polite live region.
-- A "Skip to work" link appears on first Tab.
+- A "Skip to work" link appears on first Tab, before the navigation pill.
+- The navigation pill is a `nav` landmark; the section being read has `aria-current="true"`.
 
 ## 9. Do and don't
 
@@ -104,9 +111,9 @@ Touch targets are at least 44 px. The page never scrolls sideways; only the cont
 - Do keep every claim checkable: numbers come from tests or from the GitHub data file.
 - Do credit ascii.rest in the footer and keep its MIT licence with the copied files.
 - Don't load scenes from ascii.rest at runtime; vendor them.
-- Don't add a second accent, gradients on text, glassmorphism or emoji.
-- Don't animate on scroll or add more than one effect to an element.
+- Don't add a second accent, gradients on text or emoji. Glass is for the navigation pill only (and the light blur behind the copy button).
+- Don't add more scroll-linked motion than the wordmark, or more than one effect to an element.
 
 ## 10. Prompt guide for an AI agent
 
-"Build [page] for Krish Rathore's portfolio using DESIGN.md. Dark grounds #0E0E0F to #04060C, one orange accent #F38020, Instrument Sans with JetBrains Mono labels, numbered section labels, 16 px cards with hairline borders. No new motion beyond the table in section 6. Plain HTML, CSS and JavaScript, no framework."
+"Build [page] for Krish Rathore's portfolio using DESIGN.md. Dark grounds #0E0E0F to #04060C, one orange accent #F38020, Instrument Sans with JetBrains Mono labels, numbered section labels, 16 px cards with hairline borders, the glass navigation pill at the bottom and no top bar. No new motion beyond the table in section 6. Plain HTML, CSS and JavaScript, no framework."

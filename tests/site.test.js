@@ -197,11 +197,11 @@ function tipText(day) {
     const r = await page.evaluate(() => ({
       missing: [...document.querySelectorAll('a[href^="#"]')].map(a => a.getAttribute("href").slice(1)).filter(id => !document.getElementById(id)),
       unsafe: [...document.querySelectorAll('a[target="_blank"]')].filter(a => !/noopener/.test(a.rel) || a.getAttribute("aria-describedby") !== "newTab").map(a => a.href),
-      nav: [...document.querySelectorAll(".sg-menu a")].map(a => a.getAttribute("href")),
+      nav: [...document.querySelectorAll(".sg-dock a")].map(a => a.getAttribute("href")),
     }));
     assert(!r.missing.length, "missing targets: " + r.missing);
     assert(!r.unsafe.length, "unsafe new-tab links: " + r.unsafe);
-    assert(r.nav.join(" ") === "#work #approach #contact", r.nav.join(" "));
+    assert(r.nav.join(" ") === "#work #skills #github #approach #contact", r.nav.join(" "));
     await page.context().close();
   });
 
@@ -530,6 +530,135 @@ function tipText(day) {
       await page.context().close();
     }
     assert(!bad.length, bad.join(", "));
+  });
+
+  await test("no top bar; the glass pill sits at the bottom centre and stays there while scrolling", async () => {
+    for (const vp of [{ width: 320, height: 640 }, { width: 375, height: 812 }, { width: 768, height: 1024 }, { width: 1440, height: 900 }]) {
+      const page = await newPage({ viewport: vp }); await page.goto(BASE);
+      const read = () => page.evaluate(() => {
+        const d = document.getElementById("dock"), b = d.getBoundingClientRect(), cs = getComputedStyle(d);
+        return { header: document.querySelectorAll("header, .sg-top").length, pos: cs.position, glass: cs.backdropFilter || cs.webkitBackdropFilter,
+          left: b.left, right: innerWidth - b.right, gap: innerHeight - b.bottom, links: [...d.querySelectorAll("a")].map(a => a.getBoundingClientRect().height) };
+      });
+      const top = await read();
+      await page.evaluate(() => document.getElementById("approach").scrollIntoView({ behavior: "instant" }));
+      const mid = await read();
+      const where = `${vp.width}px ${JSON.stringify(top)}`;
+      assert(top.header === 0, "a header is back: " + where);
+      assert(top.pos === "fixed" && /blur/.test(top.glass), "not a fixed glass pill: " + where);
+      assert(Math.abs(top.gap - 16) <= 1, "not 16px above the bottom: " + where);
+      assert(Math.abs(top.left - top.right) <= 1 && top.left >= 8, "not centred inside the screen: " + where);
+      assert(top.links.length === 5 && top.links.every(h => h >= 44), "links under 44px: " + where);
+      assert(JSON.stringify(mid) === JSON.stringify(top), `moved while scrolling at ${vp.width}px: ${JSON.stringify(mid)}`);
+      await page.context().close();
+    }
+  });
+
+  await test("the pill marks the section being read, slides its highlight there, and marks nothing in the hero", async () => {
+    const page = await newPage(); await page.goto(BASE); await mapReady(page);
+    const state = () => page.evaluate(() => {
+      const on = [...document.querySelectorAll("#dock a[aria-current]")];
+      const g = document.getElementById("dockGlow"), gb = g.getBoundingClientRect();
+      const lb = on[0] && on[0].getBoundingClientRect();
+      return { current: on.map(a => a.textContent).join(), glow: g.classList.contains("is-on"), off: lb ? Math.round(Math.abs(gb.left - lb.left) + Math.abs(gb.width - lb.width)) : null };
+    });
+    let r = await state();
+    assert(r.current === "" && !r.glow, "hero: " + JSON.stringify(r));
+    for (const id of ["work", "skills", "github", "approach"]) {
+      await page.evaluate(id => document.getElementById(id).scrollIntoView({ behavior: "instant" }), id);
+      await page.waitForFunction(id => (document.querySelector("#dock a[aria-current]") || {}).textContent === id, id, { timeout: 2000 });
+      await sleep(700);
+      r = await state();
+      assert(r.glow && r.off <= 1, id + ": " + JSON.stringify(r));
+    }
+    await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }));
+    await page.waitForFunction(() => (document.querySelector("#dock a[aria-current]") || {}).textContent === "contact", null, { timeout: 2000 });
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+    await page.waitForFunction(() => !document.querySelector("#dock a[aria-current]"), null, { timeout: 2000 });
+    await page.click('#dock a[href="#skills"]');
+    await page.waitForFunction(() => (document.querySelector("#dock a[aria-current]") || {}).textContent === "skills", null, { timeout: 3000 });
+    assert(/#skills$/.test(page.url()), page.url());
+    await page.context().close();
+  });
+
+  await test("at the end of the page the pill covers none of the footer links", async () => {
+    const bad = [];
+    for (const vp of [{ width: 320, height: 640 }, { width: 375, height: 812 }, { width: 768, height: 1024 }, { width: 1440, height: 900 }]) {
+      const page = await newPage({ viewport: vp }); await page.goto(BASE);
+      await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }));
+      const hit = await page.evaluate(() => {
+        const d = document.getElementById("dock").getBoundingClientRect();
+        return [...document.querySelectorAll(".sg-bottom a, .sg-bottom button, .sg-bottom span")].filter(e => {
+          const b = e.getBoundingClientRect();
+          return b.width && b.height && b.left < d.right && b.right > d.left && b.top < d.bottom && b.bottom > d.top;
+        }).map(e => e.textContent.trim());
+      });
+      if (hit.length) bad.push(`${vp.width}px: ${hit.join(", ")}`);
+      await page.context().close();
+    }
+    assert(!bad.length, bad.join(" | "));
+  });
+
+  await test("contact text sits on top of the edge orbit scene, which fills the space behind it", async () => {
+    const bad = [];
+    for (const vp of [{ width: 320, height: 640 }, { width: 375, height: 812 }, { width: 768, height: 1024 }, { width: 1440, height: 900 }, { width: 1920, height: 1080 }]) {
+      const page = await newPage({ viewport: vp }); await page.goto(BASE);
+      await page.evaluate(() => document.getElementById("say").scrollIntoView({ block: "center", behavior: "instant" }));
+      await page.waitForSelector(".sg-end-art canvas", { timeout: 8000 });
+      const r = await page.evaluate(() => {
+        const box = el => el.getBoundingClientRect();
+        const art = box(document.querySelector(".sg-end-art")), cv = box(document.querySelector(".sg-end-art canvas"));
+        const say = box(document.getElementById("say")), socials = box(document.querySelector(".sg-socials"));
+        const email = document.getElementById("emailLink"), e = box(email);
+        const topEl = document.elementFromPoint(e.left + e.width / 2, e.top + e.height / 2);
+        return { art, cv, say, socials, onTop: email.contains(topEl), ratio: cv.width / art.width };
+      });
+      const w = `${vp.width}px`;
+      if (!(r.cv.top <= r.say.top && r.cv.bottom >= r.socials.bottom)) bad.push(`${w}: scene ${Math.round(r.cv.top)}-${Math.round(r.cv.bottom)} does not span the text ${Math.round(r.say.top)}-${Math.round(r.socials.bottom)}`);
+      if (!(r.cv.left <= 0.5 && r.cv.right >= vp.width - 0.5)) bad.push(`${w}: scene is narrower than the screen`);
+      if (!(r.say.top >= r.art.top && r.socials.bottom <= r.art.bottom)) bad.push(`${w}: text is outside the scene's box`);
+      if (!r.onTop) bad.push(`${w}: the Email me button is not on top`);
+      if (r.ratio > 4.01) bad.push(`${w}: scene blown up ${r.ratio.toFixed(2)}x`);
+      await page.context().close();
+    }
+    assert(!bad.length, bad.join(" | "));
+  });
+
+  await test("big Krish at the bottom rises letter by letter as the page reaches its end", async () => {
+    const page = await newPage(); await page.goto(BASE);
+    const read = () => page.evaluate(() => {
+      const w = document.getElementById("wordmark");
+      return { p: w.style.getPropertyValue("--p"), hidden: w.getAttribute("aria-hidden"), text: w.textContent,
+        ty: [...w.children].map(s => Math.round(new DOMMatrix(getComputedStyle(s).transform).m42)) };
+    });
+    await sleep(500);
+    let r = await read();
+    assert(r.hidden === "true" && r.text === "Krish", JSON.stringify(r));
+    assert(r.p === "0.000" && r.ty.every(t => t > 0), "top of page: " + JSON.stringify(r));
+    // Partly in view: the first letters are higher than the last.
+    await page.evaluate(() => { const b = document.getElementById("wordmark").getBoundingClientRect(); window.scrollBy({ top: b.top - innerHeight + b.height * 0.4, behavior: "instant" }); });
+    await sleep(600);
+    r = await read();
+    assert(+r.p > 0.3 && +r.p < 0.5 && r.ty[0] < r.ty[4], "partly in view: " + JSON.stringify(r));
+    await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }));
+    await sleep(600);
+    r = await read();
+    assert(r.p === "1.000" && r.ty.every(t => t === 0), "end of page: " + JSON.stringify(r));
+    // Pause animation: the name is simply up, wherever the page is.
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+    await page.click("#motionToggle");
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+    await sleep(100);
+    r = await read();
+    assert(r.p === "1" && r.ty.every(t => t === 0), "paused: " + JSON.stringify(r));
+    await page.context().close();
+    // Reduced motion and no JavaScript: up from the start.
+    for (const opts of [{ reducedMotion: "reduce" }, { javaScriptEnabled: false }]) {
+      const p2 = await newPage(opts); await p2.goto(BASE);
+      const ty = await p2.$$eval("#wordmark span", ss => ss.map(s => Math.round(new DOMMatrix(getComputedStyle(s).transform).m42)));
+      assert(ty.every(t => t === 0), JSON.stringify(opts) + ": " + ty);
+      await p2.context().close();
+    }
   });
 
   await test("a long real email address wraps inside the copy button on a 320px phone", async () => {

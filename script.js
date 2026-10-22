@@ -35,6 +35,7 @@
     motionToggle.hidden = systemReduces();
     motionToggle.textContent = paused ? "Play animation" : "Pause animation";
     if (!on) finishDecrypts();
+    updateWordmark();
   }
 
   motionToggle.addEventListener("click", function () {
@@ -456,6 +457,74 @@
     }
     copyText(email).then(function () { finish(true); }, function () { finish(false); });
   });
+
+  // ---------- Navigation pill ----------
+  // The glass pill at the bottom marks the section in the middle of the screen with a highlight
+  // that slides between links. In the hero nothing is marked.
+  var dock = $("dock"), glow = $("dockGlow");
+  var dockLinks = Array.prototype.slice.call(dock.querySelectorAll("a"));
+  var currentLink = null;
+
+  function placeGlow() {
+    if (!currentLink) { glow.classList.remove("is-on"); return; }
+    glow.style.width = currentLink.offsetWidth + "px";
+    glow.style.transform = "translateX(" + currentLink.offsetLeft + "px)";
+    glow.classList.add("is-on");
+  }
+
+  function setCurrent(id) {
+    currentLink = null;
+    dockLinks.forEach(function (a) {
+      if (id && a.getAttribute("href") === "#" + id) {
+        a.setAttribute("aria-current", "true");
+        currentLink = a;
+      } else {
+        a.removeAttribute("aria-current");
+      }
+    });
+    placeGlow();
+  }
+
+  if ("IntersectionObserver" in window) {
+    var sections = dockLinks.map(function (a) { return $(a.getAttribute("href").slice(1)); });
+    var inBand = {}, spyFrame = 0;
+    // The band is a thin strip a little above the middle of the screen; the section crossing it
+    // is the one being read. When two touch it, the later one wins.
+    var pickCurrent = function () {
+      var id = null;
+      sections.forEach(function (s) { if (inBand[s.id]) id = s.id; });
+      // The contact section is short on tall screens, so the bottom of the page counts as contact.
+      if (window.innerHeight + window.scrollY >= root.scrollHeight - 2) id = "contact";
+      if (currentLink !== (id ? dock.querySelector('a[href="#' + id + '"]') : null)) setCurrent(id);
+    };
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) { inBand[en.target.id] = en.isIntersecting; });
+      pickCurrent();
+    }, { rootMargin: "-40% 0px -55% 0px" });
+    sections.forEach(function (s) { spy.observe(s); });
+    window.addEventListener("scroll", function () {
+      if (!spyFrame) spyFrame = requestAnimationFrame(function () { spyFrame = 0; pickCurrent(); });
+    }, { passive: true });
+  }
+  if ("ResizeObserver" in window) new ResizeObserver(placeGlow).observe(dock);
+
+  // ---------- Wordmark ----------
+  // The big "Krish" at the bottom rises letter by letter as it scrolls into view. The CSS turns
+  // --p (0 hidden, 1 fully up) into each letter's position; without motion it is simply up.
+  var wordmark = $("wordmark"), wordmarkFrame = 0;
+
+  function updateWordmark() {
+    wordmarkFrame = 0;
+    if (!motionOn()) { wordmark.style.setProperty("--p", "1"); return; }
+    var box = wordmark.getBoundingClientRect();
+    var p = (window.innerHeight - box.top) / box.height;
+    wordmark.style.setProperty("--p", Math.max(0, Math.min(1, p)).toFixed(3));
+  }
+  function queueWordmark() {
+    if (!wordmarkFrame) wordmarkFrame = requestAnimationFrame(updateWordmark);
+  }
+  window.addEventListener("scroll", queueWordmark, { passive: true });
+  window.addEventListener("resize", queueWordmark);
 
   // ---------- Start ----------
   applyMotion();

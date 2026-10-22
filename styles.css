@@ -53,13 +53,33 @@ h1, h2, h3 { font-weight: 500; }
 .sg-skip { position: absolute; left: 16px; top: -60px; z-index: 5; padding: 10px 14px; border-radius: 8px; background: var(--ink); color: var(--ground-dusk) !important; text-decoration: none; font-size: 14px; }
 .sg-skip:focus { top: 12px; }
 
-/* ---------- Header ---------- */
-.sg-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px 24px; padding: 8px 48px; }
+/* ---------- Navigation: a liquid glass pill fixed to the bottom of the screen ---------- */
 .sg-nav { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; color: var(--muted); transition: color .2s; }
 .sg-nav:hover { color: var(--ink); }
-.sg-mark { gap: 10px; font-family: var(--mono); font-size: 14px; color: var(--ink); }
-.sg-mark-dot { display: inline-block; width: 8px; height: 8px; background: var(--accent); }
-.sg-menu { display: flex; gap: 24px; font-family: var(--mono); font-size: 13px; }
+.sg-dock {
+  position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 20;
+  transform: translateX(-50%);
+  display: flex; align-items: center; max-width: calc(100vw - 16px); padding: 5px; border-radius: 999px;
+  font-family: var(--mono); font-size: 13px;
+  /* Clear glass: a light sheen on top, a little tint so the words stay readable over the scenes. */
+  background: linear-gradient(180deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .04) 48%, rgba(255, 255, 255, .02)), rgba(12, 12, 14, .46);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  backdrop-filter: blur(18px) saturate(180%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .26), inset 0 -1px 1px rgba(255, 255, 255, .06), inset 0 0 20px rgba(255, 255, 255, .04), 0 12px 32px rgba(0, 0, 0, .5), 0 1px 2px rgba(0, 0, 0, .5);
+}
+/* The rim: bright where light hits the top edge, fainter along the bottom, like a lens. */
+.sg-dock::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, .08) 38%, rgba(255, 255, 255, .03) 62%, rgba(255, 255, 255, .18));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.sg-dock a { position: relative; z-index: 1; display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 999px; color: var(--ink-soft); text-decoration: none; white-space: nowrap; transition: color .2s; }
+.sg-dock a:hover, .sg-dock a[aria-current="true"] { color: #FFFFFF; }
+/* A drop of brighter glass behind the section in view; it slides with a little overshoot. */
+.sg-dock-glow { position: absolute; z-index: 0; left: 0; top: 5px; width: 0; height: 44px; border-radius: 999px; opacity: 0; pointer-events: none; background: linear-gradient(180deg, rgba(255, 255, 255, .2), rgba(255, 255, 255, .07)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), inset 0 -1px 0 rgba(255, 255, 255, .06); transition: transform .5s cubic-bezier(.3, 1.35, .5, 1), width .5s cubic-bezier(.3, 1.35, .5, 1), opacity .25s; }
+.sg-dock-glow.is-on { opacity: 1; }
 
 /* ---------- Hero ---------- */
 .sg-hero { position: relative; }
@@ -180,17 +200,36 @@ h1, h2, h3 { font-weight: 500; }
 .sg-rules li:last-child { border-bottom: 1px solid var(--hairline); }
 .sg-rule-n { color: var(--accent); font-size: 14px; padding-top: 6px; }
 
-/* ---------- 05 Contact: centred, over the Earth at sunrise ---------- */
-.sg-end { position: relative; padding-top: 180px; }
-.sg-end-in { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 48px; }
+/* ---------- 05 Contact: centred, on top of the Earth at sunrise ---------- */
+.sg-end { position: relative; padding-top: 160px; container-type: inline-size; }
+/* The stage holds the contact text and the big name; the scene fills it from behind. */
+.sg-end-stage { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; gap: clamp(64px, 8vw, 128px); padding: clamp(72px, 8vw, 120px) 48px 0; }
+.sg-end-in { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; text-align: center; }
+/* A soft shade that follows the words, so they stay readable wherever the orbit passes behind them. */
+.sg-end-in::before { content: ''; position: absolute; z-index: -1; inset: -14% -18%; pointer-events: none; background: radial-gradient(closest-side, rgba(4, 6, 12, .7), rgba(4, 6, 12, .4) 62%, rgba(4, 6, 12, 0)); }
+.sg-end-text, .sg-socials a { text-shadow: 0 0 2px #04060C, 0 0 12px #04060C; }
 .sg-say { margin: 20px 0 0; font-size: clamp(64px, 9vw, 132px); font-weight: 500; letter-spacing: -.05em; line-height: .9; white-space: pre; cursor: default; }
 .sg-end-text { margin: 28px 0 0; max-width: 520px; font-size: 18px; line-height: 1.5; color: var(--muted); }
 .sg-cta { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px 16px; margin-top: 36px; }
 .sg-socials { display: flex; gap: 28px; margin-top: 12px; }
-.sg-end-art { position: relative; aspect-ratio: 2 / 1; margin-top: -190px; }
-.sg-end-art ascii-art { width: 100%; }
-.sg-end-art::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, #04060C 0%, rgba(4, 6, 12, 0) 30%), linear-gradient(0deg, #04060C 0%, rgba(4, 6, 12, 0) 12%); }
-.sg-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0 24px; padding: 8px 48px 40px; }
+.sg-end-art { position: absolute; inset: 0; overflow: hidden; pointer-events: none; container-type: size; }
+/* Like background-size: cover, anchored to the bottom so the Earth sits behind the name: the scene
+   is 2:1, so it is as wide as the stage or twice its height, whichever is larger. It is never
+   blown up past 4 times the stage width, to keep the canvas a sensible size on small phones. */
+.sg-end-art ascii-art { position: absolute; left: 50%; bottom: 0; width: 100%; width: min(max(100cqw, 200cqh), 400cqw); transform: translateX(-50%); }
+/* The top and bottom edges of the scene fade into the night. */
+.sg-end-art::after {
+  content: ''; position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg, #04060C 0%, rgba(4, 6, 12, 0) 16%),
+    linear-gradient(0deg, #04060C 0%, rgba(4, 6, 12, 0) 8%);
+}
+/* The first name, as wide as the page, rising letter by letter as the page reaches its end.
+   script.js sets --p from 0 to 1 while scrolling; without it (or with motion off) it stays at 1. */
+.sg-wordmark { --p: 1; position: relative; z-index: 1; display: flex; justify-content: center; margin: 0; padding-top: .06em; overflow: hidden; font-family: var(--mono); font-weight: 500; font-size: 18vw; font-size: calc((100cqw - 96px) / 2.8); line-height: .86; letter-spacing: -.06em; color: var(--ink); user-select: none; }
+.sg-wordmark span { --pi: clamp(0, calc(var(--p) * 1.6 - var(--i) * .15), 1); display: block; transform: translateY(calc((1 - var(--pi)) * 110%)); transition: transform .35s cubic-bezier(.2, .7, .2, 1); }
+/* Room at the bottom so the navigation pill never covers this row. */
+.sg-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0 24px; padding: 16px 48px calc(96px + env(safe-area-inset-bottom, 0px)); }
 .sg-bottom-end { display: flex; flex-wrap: wrap; gap: 0 24px; }
 .sg-bottom .sg-nav { font-size: 12px; }
 .sg-credit { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
@@ -216,7 +255,7 @@ h1, h2, h3 { font-weight: 500; }
 .sg-btn:hover { color: var(--ground-dusk); filter: brightness(1.08); }
 
 /* Copy button with Status Mark: a ring, then a spinning arc, then a check. */
-.sg-copy { display: inline-flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 20px 0 18px; border-radius: 999px; border: 1px solid #2E2E33; background: rgba(14, 14, 15, .6); color: var(--ink); font: inherit; font-size: 15px; cursor: pointer; transition: border-color .2s; max-width: 100%; }
+.sg-copy { display: inline-flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 20px 0 18px; border-radius: 999px; border: 1px solid #2E2E33; background: rgba(14, 14, 15, .6); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: var(--ink); font: inherit; font-size: 15px; cursor: pointer; transition: border-color .2s; max-width: 100%; }
 .sg-copy:hover { border-color: #5C5C63; }
 /* A long address wraps inside the pill instead of pushing the page sideways on a phone. */
 .sg-copy-addr { min-width: 0; font-size: 14px; text-align: left; overflow-wrap: anywhere; }
@@ -242,7 +281,7 @@ h1, h2, h3 { font-weight: 500; }
   .sg-how { grid-template-columns: minmax(0, 1fr); gap: 24px; }
 }
 @media (max-width: 640px) {
-  .sg-top, .sg-sec, .sg-bottom { padding-left: 20px; padding-right: 20px; }
+  .sg-sec, .sg-bottom { padding-left: 20px; padding-right: 20px; }
   .sg-sec { padding-top: 112px; }
   .sg-skills { grid-template-columns: minmax(0, 1fr); }
   /* The hero text moves above the scene. */
@@ -252,9 +291,19 @@ h1, h2, h3 { font-weight: 500; }
   .sg-art::after { background: linear-gradient(0deg, #0E0E0F 0%, rgba(14, 14, 15, 0) 22%), linear-gradient(180deg, #0E0E0F 0%, rgba(14, 14, 15, 0) 22%); }
   .sg-card, .sg-skills .sg-card { padding: 24px; }
   .sg-rules li { grid-template-columns: 40px minmax(0, 1fr); font-size: 18px; padding: 20px 0; }
-  .sg-end { padding-top: 120px; }
-  .sg-end-in { padding: 0 20px; }
-  .sg-end-art { margin-top: -8px; }
+  .sg-end { padding-top: 112px; }
+  .sg-end-stage { gap: 56px; padding: 64px 20px 0; }
+  .sg-wordmark { font-size: calc((100cqw - 40px) / 2.8); }
+  .sg-dock { font-size: 12px; }
+  .sg-dock a { padding: 0 10px; }
+}
+@media (max-width: 380px) {
+  .sg-dock a { padding: 0 8px; }
+}
+@media (max-width: 340px) {
+  .sg-dock { font-size: 11px; padding: 4px; }
+  .sg-dock a { padding: 0 6px; }
+  .sg-dock-glow { top: 4px; }
 }
 
 /* ---------- Motion off ---------- */

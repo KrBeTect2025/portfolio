@@ -10,7 +10,8 @@ dependencies (fonts load from Google Fonts, with system fallbacks).
 - `index.html`: all the words and links on the page.
 - `styles.css`: colours, type and layout. The colour tokens are at the top.
 - `script.js`: the small effects (the name and "Say hi." scrambling into place, the card
-  spotlight, the copy button), the Pause animation button, and the contribution map.
+  spotlight, the copy button, the big "Krish" rising at the bottom, the highlight in the
+  navigation pill), the Pause animation button, and the contribution map.
 - `vendor/ascii-rest/`: the two animated scenes, "cloud sea" and "edge orbit", copied from
   [ascii.rest](https://ascii.rest) by [@bas3line](https://github.com/bas3line/ascii) under the MIT
   licence (kept in that folder). They are vendored, not loaded from ascii.rest, so the site never
@@ -35,15 +36,16 @@ Two placeholders are yours to fill in `index.html` (search for `TODO(you)`):
 
 The scenes run only while they are on screen. Everything holds still when the system asks for
 reduced motion, and visitors can press Pause animation at the bottom of the page; that choice is
-remembered.
+remembered. With motion off, the big "Krish" at the bottom simply stands in place.
 
 ## Tests
 
 `tests/` holds browser tests for the site. They are not part of the published site. They cover
 loading without errors, the page head and preview image, forced dark mode, section order, the
 skip link, the contribution map (numbers, weekdays, tooltip, keyboard, missing or broken data),
-the effects, the copy button, reduced motion and the Pause button, sideways scrolling at 19
-screen widths, touch target sizes, an accessibility scan (axe) on desktop and phone, and a check
+the effects, the copy button, reduced motion and the Pause button, the navigation pill (place,
+section highlight, never covering the footer), the contact text over the edge orbit scene, the
+"Krish" rise, sideways scrolling at 19 screen widths, touch target sizes, an accessibility scan (axe) on desktop and phone, and a check
 that the deploy workflow publishes every file the page loads.
 
 ```
