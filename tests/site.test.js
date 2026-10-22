@@ -734,6 +734,53 @@ function tipText(day) {
     }
   });
 
+  await test("big Krish is evenly spaced and centred, and the last line's middle sits on the centre line", async () => {
+    const bad = [];
+    for (const w of [1920, 1440, 1024, 800, 375]) {
+      const page = await newPage({ viewport: { width: w, height: 900 }, reducedMotion: "reduce", realFonts: true });
+      await page.goto(BASE);
+      const r = await page.evaluate(async () => {
+        await document.fonts.ready;
+        const wm = document.getElementById("wordmark"), cs = getComputedStyle(wm), fs = parseFloat(cs.fontSize);
+        // Each letter's ink, row by row, drawn from the real font at the real size.
+        const cv = document.createElement("canvas"), W = Math.ceil(fs), H = Math.ceil(fs * 1.3), base = Math.round(fs);
+        cv.width = W; cv.height = H;
+        const c = cv.getContext("2d"); c.font = cs.fontWeight + " " + fs + "px " + cs.fontFamily;
+        const spans = [...wm.children];
+        const ink = spans.map(sp => {
+          c.clearRect(0, 0, W, H); c.fillText(sp.textContent, 0, base);
+          const d = c.getImageData(0, 0, W, H).data, L = [], R = [];
+          for (let y = 0; y < H; y++) {
+            let l = null, rr = null;
+            for (let x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3] > 127) { if (l === null) l = x; rr = x + 1; }
+            L.push(l); R.push(rr);
+          }
+          const x0 = sp.getBoundingClientRect().left;
+          return { L: L.map(v => v === null ? null : x0 + v), R: R.map(v => v === null ? null : x0 + v) };
+        });
+        const lefts = ink[0].L.filter(v => v !== null), rights = ink[4].R.filter(v => v !== null);
+        const gaps = [];
+        for (let k = 1; k < ink.length; k++) {
+          let g = Infinity;
+          for (let y = 0; y < H; y++) if (ink[k - 1].R[y] !== null && ink[k].L[y] !== null) g = Math.min(g, ink[k].L[y] - ink[k - 1].R[y]);
+          gaps.push(+(g / fs).toFixed(3));
+        }
+        const bottom = [...document.querySelector(".sg-bottom").children].map(e => e.getBoundingClientRect());
+        return {
+          loaded: document.fonts.check("500 20px 'JetBrains Mono'"), left: Math.min(...lefts), right: innerWidth - Math.max(...rights), gaps,
+          gutter: bottom[0].left, mid: (bottom[1].left + bottom[1].right) / 2 - innerWidth / 2,
+        };
+      });
+      if (!r.loaded) bad.push(w + "px: JetBrains Mono did not load");
+      if (Math.abs(r.left - r.right) > 1.5) bad.push(`${w}px: ${r.left.toFixed(1)}px left of the K, ${r.right.toFixed(1)}px right of the h`);
+      if (w > 640 && Math.abs(r.left - 48) > 4) bad.push(`${w}px: the K starts at ${r.left.toFixed(1)}px, not at the 48px page margin`);
+      if (r.gaps.some(g => g < .08 || g > .2)) bad.push(`${w}px: closest approach between letters ${r.gaps.join(", ")}em`);
+      if (Math.abs(r.mid) > 1) bad.push(`${w}px: the last line's middle is ${r.mid.toFixed(1)}px off centre`);
+      await page.context().close();
+    }
+    assert(!bad.length, bad.join("; "));
+  });
+
   await test("blocks below the hero fade in as they scroll into view, then hold; nothing is hidden with motion off", async () => {
     const page = await newPage(); await page.goto(BASE); await mapReady(page);
     let r = await page.evaluate(() => ({
