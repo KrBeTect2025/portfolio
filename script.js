@@ -412,7 +412,13 @@
   var email = $("emailLink").getAttribute("href").replace(/^mailto:/, "").split("?")[0];
   var copyState = "idle", copyTimer = 0;
   var COPY_LABELS = { idle: "Copy", busy: "Copying", done: "Copied", error: "Blocked" };
-  $("copyAddr").textContent = email;
+  // When the address has to wrap on a narrow phone, it breaks before the @, not mid-word.
+  var at = email.indexOf("@");
+  $("copyAddr").textContent = at > 0 ? email.slice(0, at) : email;
+  if (at > 0) {
+    $("copyAddr").appendChild(document.createElement("wbr"));
+    $("copyAddr").appendChild(document.createTextNode(email.slice(at)));
+  }
   copyBtn.hidden = false;
 
   function setCopy(state) {

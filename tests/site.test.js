@@ -13,6 +13,8 @@ const SAMPLE = path.join(__dirname, "sample-contributions.json");
 const OUT = path.join(__dirname, "output");
 const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js"), "utf8");
 const DATA = JSON.parse(fs.readFileSync(SAMPLE, "utf8"));
+// The address in the Email me link; the copy button must show and copy exactly this.
+const EMAIL = (fs.readFileSync(path.join(ROOT, "index.html"), "utf8").match(/id="emailLink" href="mailto:([^"?]+)/) || [])[1];
 fs.mkdirSync(OUT, { recursive: true });
 
 // A tiny static server for the repo folder. data/contributions.json comes from the sample file.
@@ -432,7 +434,7 @@ function tipText(day) {
   await test("copy button: ring, spinner, check; copies the address from the mailto link", async () => {
     const page = await newPage({ permissions: ["clipboard-read", "clipboard-write"] }); await page.goto(BASE);
     const addr = await page.textContent("#copyAddr");
-    assert(addr === "you@example.com", "address shown: " + addr);
+    assert(addr === EMAIL, "address shown: " + addr);
     await page.click("#copyEmail");
     assert(await page.getAttribute("#copyEmail", "data-copy") === "busy", "no busy state");
     await page.waitForSelector('#copyEmail[data-copy="done"]', { timeout: 2000 });
@@ -453,14 +455,14 @@ function tipText(day) {
     await page.click("#copyEmail");
     await page.waitForSelector('#copyEmail[data-copy="error"]', { timeout: 2000 });
     assert(await page.textContent("#copyMsg") === "Blocked", "label");
-    assert(/you@example\.com/.test(await page.textContent("#copyLive")), "live: " + await page.textContent("#copyLive"));
+    assert((await page.textContent("#copyLive")).includes(EMAIL), "live: " + await page.textContent("#copyLive"));
     assert(await page.evaluate(() => document.activeElement.id) === "copyEmail", "focus left the button");
     await page.context().close();
   });
 
   await test("copy button: a real address set only in the mailto link is the one shown and copied", async () => {
     const page = await newPage({ permissions: ["clipboard-read", "clipboard-write"] });
-    await withHtml(page, 'href="mailto:you@example.com"', 'href="mailto:a.much.longer.name.for.testing@example.org"');
+    await withHtml(page, 'href="mailto:' + EMAIL + '"', 'href="mailto:a.much.longer.name.for.testing@example.org"');
     await page.goto(BASE);
     assert(await page.textContent("#copyAddr") === "a.much.longer.name.for.testing@example.org", "shown");
     await page.click("#copyEmail");
@@ -743,13 +745,24 @@ function tipText(day) {
     }
   });
 
-  await test("a long real email address wraps inside the copy button on a 320px phone", async () => {
+  await test("a long real email address wraps inside the copy button on a 320px phone, breaking before the @", async () => {
     const page = await newPage({ viewport: { width: 320, height: 700 } });
-    await withHtml(page, 'href="mailto:you@example.com"', 'href="mailto:firstname.lastname.portfolio@example.org"');
+    await withHtml(page, 'href="mailto:' + EMAIL + '"', 'href="mailto:firstname.lastname.portfolio@example.org"');
     await page.goto(BASE);
     const r = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth, b: document.getElementById("copyEmail").getBoundingClientRect().right }));
     assert(r.sw <= r.cw && r.b <= r.cw, JSON.stringify(r));
     await page.context().close();
+    // An address that needs two lines on a 375px phone breaks before the @, not mid-word.
+    const p2 = await newPage({ viewport: { width: 375, height: 812 } });
+    await withHtml(p2, 'href="mailto:' + EMAIL + '"', 'href="mailto:someone.portfolio1@gmail.com"');
+    await p2.goto(BASE);
+    const w = await p2.evaluate(() => {
+      const el = document.getElementById("copyAddr"), a = document.createRange(), b = document.createRange();
+      a.selectNodeContents(el.firstChild); b.selectNodeContents(el.lastChild);
+      return { text: el.textContent, first: a.getClientRects().length, second: b.getClientRects().length, below: b.getBoundingClientRect().top > a.getBoundingClientRect().top, starts: el.lastChild.textContent[0] };
+    });
+    assert(w.text === "someone.portfolio1@gmail.com" && w.first === 1 && w.second === 1 && w.below && w.starts === "@", JSON.stringify(w));
+    await p2.context().close();
   });
 
   await test("grids: bento, four skill compartments (4, then 2, then 1 across), phone hero opens with the scene", async () => {
@@ -844,10 +857,10 @@ function tipText(day) {
     const page = await newPage(); await page.goto(BASE);
     const m = await page.evaluate(() => ({
       email: (document.getElementById("emailLink") || {}).getAttribute("href"),
-      linkedin: !!document.querySelector('a[href="https://www.linkedin.com/"]'),
+      linkedin: [...document.querySelectorAll('a[href*="linkedin.com"]')].map(a => a.getAttribute("href")),
     }));
-    if (/you@example\.com/.test(m.email)) note("content", "The Email me link still points at you@example.com.");
-    if (m.linkedin) note("content", "The LinkedIn link points at linkedin.com, not a profile.");
+    if (/@example\.(com|org)/.test(m.email)) note("content", "The Email me link still points at a placeholder address.");
+    if (m.linkedin.some(h => !/linkedin\.com\/in\/[^/]+/.test(h))) note("content", "A LinkedIn link points at linkedin.com, not a profile.");
     await page.context().close();
   });
 

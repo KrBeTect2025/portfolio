@@ -25,12 +25,10 @@ dependencies (fonts load from Google Fonts, with system fallbacks).
   missing (for example when you open `index.html` straight from disk), the section shows a note
   and the profile link instead.
 
-## Before it goes live
+## Contact links
 
-Two placeholders are yours to fill in `index.html` (search for `TODO(you)`):
-
-- your email address in the `mailto:` link of the Email me button (the copy button reads it from there);
-- your LinkedIn profile URL, or delete that link.
+The contact links live at the end of `index.html`. To change the email address, edit only the
+`mailto:` link of the Email me button: the copy button reads the address from there.
 
 ## Motion
 
