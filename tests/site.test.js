@@ -216,10 +216,10 @@ function tipText(day) {
       name: getComputedStyle(document.getElementById("nameText")).visibility + ":" + document.getElementById("nameText").textContent,
       say: document.getElementById("sayText").textContent,
       note: document.getElementById("ghNote").textContent,
-      hidden: ["copyEmail", "motionToggle", "ghMap", "ghStats"].filter(id => document.getElementById(id).getBoundingClientRect().height === 0).length,
+      hidden: ["copyEmail", "motionToggle", "ghMap", "ghStats", "ghCount"].filter(id => document.getElementById(id).getBoundingClientRect().height === 0).length,
       email: document.getElementById("emailLink").getBoundingClientRect().height > 0,
     }));
-    assert(r.name === "visible:Krish Rathore" && r.say === "Say hi." && /on GitHub/.test(r.note) && r.hidden === 4 && r.email, JSON.stringify(r));
+    assert(r.name === "visible:Krish Rathore" && r.say === "Say hi." && /on GitHub/.test(r.note) && r.hidden === 5 && r.email, JSON.stringify(r));
     await page.context().close();
   });
 
@@ -234,7 +234,7 @@ function tipText(day) {
   });
 
   // ---------- Contribution map ----------
-  await test("map: one dot per day, coloured by each day's level, on the right weekday", async () => {
+  await test("map: one square per day, coloured by each day's level, on the right weekday", async () => {
     const page = await newPage(); await page.goto(BASE); await mapReady(page);
     const dots = await page.$$eval("#ghCal .sg-d", els => els.map(e => ({ cls: e.className, row: getComputedStyle(e).gridRowStart, col: +getComputedStyle(e).gridColumnStart })));
     assert(dots.length === DAYS.length, `${dots.length} dots for ${DAYS.length} days`);
@@ -245,18 +245,28 @@ function tipText(day) {
     assert(dots[0].col === 1 && dots[dots.length - 1].col === DATA.weeks.length, "columns " + dots[0].col + ".." + dots[dots.length - 1].col);
     const months = await page.$$eval("#ghMonths span", els => els.map(e => e.textContent));
     assert(months.length >= 10 && months.every(m => /^[A-Z][a-z]{2}$/.test(m)), "month labels: " + months);
+    // Like GitHub's map: every day, empty or busy, is the same rounded square with a gap around it.
+    const tiles = await page.$$eval("#ghCal .sg-d.l0, #ghCal .sg-d.l4", els => [els.find(e => e.classList.contains("l0")), els.find(e => e.classList.contains("l4"))].filter(Boolean).map(e => {
+      const t = getComputedStyle(e, "::before");
+      return { w: parseFloat(t.width), h: parseFloat(t.height), r: parseFloat(t.borderTopLeftRadius), cell: e.getBoundingClientRect().width, bg: t.backgroundColor };
+    }));
+    assert(tiles.length === 2 && tiles.every(t => t.w === t.h && t.w === tiles[0].w && t.cell - t.w === 3 && t.r > 0 && t.r < t.w / 2) && tiles[0].bg !== tiles[1].bg, JSON.stringify(tiles));
     await page.context().close();
   });
 
-  await test("map: the three numbers, the note and the skills line come from the data", async () => {
+  await test("map: the numbers, the note and the skills line come from the data; the total sits under the map", async () => {
     const page = await newPage(); await page.goto(BASE); await mapReady(page);
     const s = expectedStreak(DAYS);
     const r = await page.evaluate(() => ({
       total: document.getElementById("ghTotal").textContent, recent: document.getElementById("ghRecent").textContent,
       streak: document.getElementById("ghStreak").textContent, label: document.getElementById("ghStreakLabel").textContent,
       note: document.getElementById("ghNote").textContent, skill: document.getElementById("skillGit").closest(".sg-used").textContent,
+      count: document.getElementById("ghCount").textContent, countUnderMap: document.getElementById("ghCount").getBoundingClientRect().top > document.getElementById("ghCal").getBoundingClientRect().bottom,
+      stats: [...document.querySelectorAll("#ghStats dt")].map(e => e.textContent),
     }));
     assert(r.total === DATA.total.toLocaleString("en"), "total " + r.total);
+    assert(r.count === DATA.total.toLocaleString("en") + " contributions in the last year" && r.countUnderMap, JSON.stringify([r.count, r.countUnderMap]));
+    assert(r.stats.length === 2 && !r.stats.some(t => /last year/.test(t)), "the yearly total is shown twice: " + r.stats);
     assert(r.recent === RECENT.toLocaleString("en"), `last 30 days ${r.recent}, expected ${RECENT}`);
     const want = s.current > 0 ? s.current : s.longest;
     assert(r.streak === String(want), `streak ${r.streak}, expected ${want} (${JSON.stringify(s)}) label "${r.label}"`);
@@ -368,13 +378,16 @@ function tipText(day) {
     await page.context().close();
   });
 
-  await test("map: the whole year fits without scrolling on laptops and tablets, days 12 to 16px apart", async () => {
+  await test("map: the whole year fits without scrolling on laptops and tablets, days 12 to 16px apart, the key lined up with it", async () => {
     const bad = [];
     for (const w of [1920, 1440, 1366, 1280, 1180, 1101, 1100, 1024, 900, 768]) {
       const page = await newPage({ viewport: { width: w, height: 900 } }); await page.goto(BASE); await mapReady(page);
       const r = await page.$eval("#ghMap", e => ({ sw: e.scrollWidth, cw: e.clientWidth, cell: getComputedStyle(document.getElementById("ghWrap")).getPropertyValue("--cell").trim() }));
       if (r.sw > r.cw) bad.push(`${w}px: map ${r.sw} > box ${r.cw} (cell ${r.cell})`);
       if (!/^(1[2-6])px$/.test(r.cell)) bad.push(`${w}px: cell ${r.cell}`);
+      // The total and the Less/More key end where the squares end.
+      const edge = await page.evaluate(() => [document.getElementById("ghFoot"), document.getElementById("ghCal")].map(e => e.getBoundingClientRect().right));
+      if (Math.abs(edge[0] - edge[1]) > 1) bad.push(`${w}px: key ends at ${edge[0]}, squares at ${edge[1]}`);
       await page.context().close();
     }
     assert(!bad.length, bad.join(", "));
@@ -387,7 +400,7 @@ function tipText(day) {
       await page.goto(BASE);
       await page.waitForFunction(() => /could not load/.test(document.getElementById("ghNote").textContent), null, { timeout: 3000 });
       const r = await page.evaluate(() => ({
-        map: document.getElementById("ghMap").hidden, stats: document.getElementById("ghStats").hidden,
+        map: document.getElementById("ghMap").hidden, stats: document.getElementById("ghStats").hidden && document.getElementById("ghCount").hidden,
         legend: document.getElementById("ghLegend").hidden, skill: document.getElementById("skillGit").textContent,
         link: !!document.querySelector('#github a[href="https://github.com/KrBeTect2025"]'),
       }));

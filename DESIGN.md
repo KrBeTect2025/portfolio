@@ -27,7 +27,7 @@ Dark, quiet and technical. One live picture at each end of the page, everything 
 | `live` | `#3FCB7E` | The "Live" dot on a deployed project. Nothing else. |
 | `error` | `#E5484D` | The copy button's error state. Nothing else. |
 
-Contribution dots use the edge orbit palette, smallest to largest: `#2A2D36`, `#7A3812`, `#D0661A`, `#F38020`, `#FAAE40`. Size changes with colour, so the levels read without colour too.
+Contribution squares use the edge orbit palette, empty to busiest: `#181B20`, `#5C3015`, `#A85514`, `#F38020`, `#FAAE40`. Lightness rises in even steps, so the levels read without colour too.
 
 ## 3. Typography
 
@@ -52,7 +52,7 @@ Section labels are numbered like a route: `01 / Work`, `02 / Skills`, `03 / GitH
 - Work is a 3-column bento: the headline project spans 2 columns and 2 rows.
 - Skills is four equal compartments in a row (2 by 2 below 1100 px, stacked under 640 px).
 - GitHub and Approach are two-column splits (4:8 and 5:7) that stack below 1100 px and 900 px.
-- No shadows except the busiest contribution dot's glow and the navigation pill. Depth comes from the two grounds and the scenes.
+- No shadows; the only exception is the soft ring around the "Live" dot. Depth comes from the two grounds and the scenes.
 - There is no top bar. Navigation is the glass pill fixed 16 px above the bottom of the screen (plus the safe area on phones), so the page bottom keeps 96 px of padding to stay clear of it.
 
 ## 5. Components
@@ -60,7 +60,7 @@ Section labels are numbered like a route: `01 / Work`, `02 / Skills`, `03 / GitH
 - **Scene frame.** `<ascii-art>` from ascii.rest inside a box with a fixed shape and `overflow: hidden`. Hero: 16:7 on desktop with the text over its dark left edge; on phones the page opens with the scene (2:1, full width) and the text follows below it. Gradients fade the left, top and bottom into `ground-dusk`. Ending: sized like `background-size: cover` anchored to the bottom (never more than 4 times the page width), its top and bottom fading into `ground-night`. On wide screens it sits behind the contact text and the wordmark, and the text sits on top of it. On phones (640 px and under) it starts 150 px above the wordmark and runs to the bottom of the page, under the navigation pill. There it is drawn larger (at least 2.7 times the screen width) and lined up with the name instead of the bottom: the Earth's glowing edge crosses "Krish" 40% of the way down its letters. The last line is centred, one item per line, with a soft shade behind its words.
 - **Project card.** Label (stack), title, one paragraph, then a `Works / Not yet` or `Note` list, then links. Every card says what does not work yet.
 - **Skill compartment.** A card titled Languages, Backend and data, Front end or Practice, with its count in `accent`. Each skill is a row: the name, then in small mono the project that uses it. A skill with no project behind it does not go on the page.
-- **Contribution map.** One dot per day, 53 weeks by 7 days, month labels above, legend below, a link to the GitHub profile. Reads `data/contributions.json`, which the deploy writes daily. Days sit 16 px apart where the whole year fits, closing up to 12 px; only where 12 px does not fit (phones) does the box scroll sideways.
+- **Contribution map.** Laid out like GitHub's own: one rounded square per day (3 px apart), 53 weeks by 7 days, month labels above; below, the year's total on the left and the Less/More key and the GitHub profile link on the right. The last 30 days and the streak sit beside it, so no number appears twice. Reads `data/contributions.json`, which the deploy writes daily. Days sit 16 px apart where the whole year fits, closing up to 12 px; only where 12 px does not fit (phones) does the box scroll sideways.
 - **Primary button.** Orange pill, dark text, 56 px tall, wrapped in the Star Border ring.
 - **Copy button.** Outline pill showing the address, with the Status Mark glyph and a one-word state: Copy, Copying, Copied, Blocked. It blurs the scene behind it (10 px).
 - **Contact shade.** A soft radial shade follows the contact text, and the paragraph and social links carry a dark halo, so they stay readable where the orbit passes behind them.
@@ -76,7 +76,7 @@ Budget: the two scenes, one load effect, one arrival effect, the fade-in of bloc
 | Decrypted Text | Hero name | Page load, once | Left to right, 45 ms steps. |
 | Decrypted Text | "Say hi." | Comes 60% into view, once; again on hover | Edges first, centre last, so the line converges. |
 | Spotlight Card | Project cards and skill compartments | Pointer move | Radial accent glow at 12%. |
-| Warm Tooltip | Contribution dots | Hover, or arrow keys after focusing the map | First tooltip waits 320 ms, the next ones open at once for 500 ms after leaving. |
+| Warm Tooltip | Contribution squares | Hover, or arrow keys after focusing the map | First tooltip waits 320 ms, the next ones open at once for 500 ms after leaving. |
 | Star Border | Email button | Once after "Say hi." resolves; loops while hovered or focused | One light travelling the outline, then it fades. |
 | Status Mark | Copy button | Click | Ring, spinning arc, then a check. |
 | (own) Section highlight | Navigation pill | The section crossing a band 40 to 45% down the screen; the page bottom counts as contact; a click | Slides 0.4 s, ease out. |

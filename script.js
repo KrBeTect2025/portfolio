@@ -266,11 +266,13 @@
       return '<span style="grid-column:' + label.col + ' / span 3">' + label.text + "</span>";
     }).join("");
 
-    // The three numbers.
+    // The numbers: the year's total under the map, the last 30 days and the streak beside it.
     var total = typeof data.total === "number" ? data.total : days.reduce(function (s, d) { return s + d.count; }, 0);
     var recent = days.slice(-30).reduce(function (s, d) { return s + d.count; }, 0);
     var s = streaks(days);
     $("ghTotal").textContent = total.toLocaleString("en");
+    $("ghTotalLabel").textContent = (total === 1 ? "contribution" : "contributions") + " in the last year";
+    $("ghCount").hidden = false;
     $("ghRecent").textContent = recent.toLocaleString("en");
     var streakLabel;
     if (s.current > 0 && s.current === s.longest) {
@@ -286,7 +288,7 @@
     $("ghStreakLabel").textContent = streakLabel;
     $("ghStats").hidden = false;
 
-    var note = "Each dot is a day. Synced daily from GitHub";
+    var note = "Synced daily from GitHub";
     if (/^\d{4}-\d{2}-\d{2}$/.test(data.updated || "")) {
       var u = utc(data.updated);
       note += "; updated " + u.getUTCDate() + " " + MONTHS[u.getUTCMonth()].slice(0, 3) + " " + u.getUTCFullYear();
@@ -302,8 +304,8 @@
     map.scrollLeft = map.scrollWidth;
   }
 
-  // Days sit 16px apart where the whole year fits, closing up to 12px; narrower than that, the
-  // box scrolls sideways instead.
+  // Day squares sit 16px apart where the whole year fits, closing up to 12px; narrower than that,
+  // the box scrolls sideways instead.
   var weeksShown = 0;
   function fitMap() {
     if (!weeksShown || map.hidden) return;
@@ -311,7 +313,9 @@
     if (wrap.style.getPropertyValue("--cell") === cell + "px") return;
     hideDay();
     wrap.style.setProperty("--cell", cell + "px");
-    wrap.classList.toggle("is-tight", cell < 14);
+    // The total and the key end where the squares do (on phones the squares scroll, so this is wider
+    // than the box and changes nothing).
+    $("ghFoot").style.maxWidth = cell * weeksShown + "px";
   }
   if (window.ResizeObserver) new ResizeObserver(fitMap).observe(map);
   else window.addEventListener("resize", fitMap);
@@ -319,6 +323,7 @@
   function contributionsMissing() {
     map.hidden = true;
     $("ghStats").hidden = true;
+    $("ghCount").hidden = true;
     $("ghLegend").hidden = true;
     $("ghNote").textContent = "The contribution map could not load. My daily activity is on GitHub.";
   }
