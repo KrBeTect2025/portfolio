@@ -80,21 +80,21 @@
         </div>
         <div class="sg-bento">
           <article class="sg-card sg-card--lead">
-            <span class="sg-label">Python / FastAPI / PDF parsing</span>
-            <h3 class="sg-title-lg">lab-report-explainer</h3>
-            <p class="sg-desc-lg">Reads a lab report PDF, rebuilds the table of results from the position of each word on the page, and marks every result low, normal or high with plain code, not an AI guess. A FastAPI service handles upload, lets a person review uncertain rows, and deletes the result after 24 hours.</p>
-            <div class="sg-big"><span class="sg-big-n">52</span><span class="sg-label">tests passing</span></div>
+            <span class="sg-label">Python / FastAPI / WebRTC / Redis</span>
+            <h3 class="sg-title-lg">peer</h3>
+            <p class="sg-desc-lg">Sends a file of any size from one browser to another with a 6-digit code. A FastAPI and Redis server only introduces the two browsers; the file goes straight between them over an encrypted WebRTC channel and is written to disk as it arrives, so memory stays flat however big the file is.</p>
+            <div class="sg-big"><span class="sg-big-n">50&nbsp;GB</span><span class="sg-label">sent byte for byte, receiver memory about 420 MB</span></div>
             <ul class="sg-fixes" aria-label="Bugs fixed, each with a test">
-              <li><span class="sg-label">fix</span><span>A watermark leaking letters into numeric results</span></li>
-              <li><span class="sg-label">fix</span><span>A "Method" column merging into the reference range</span></li>
-              <li><span class="sg-label">fix</span><span>A symbol font being read as garbage characters</span></li>
+              <li><span class="sg-label">fix</span><span>Over the internet, a fast receiver got "no such code" because the code showed before the server had saved it</span></li>
+              <li><span class="sg-label">fix</span><span>Zipping a folder of 70,000 files overflowed the call stack</span></li>
+              <li><span class="sg-label">fix</span><span>Two receivers reading the same zip at once got a corrupt file</span></li>
             </ul>
             <dl class="sg-status">
-              <dt>Works</dt><dd>Extraction and low, normal or high flags</dd>
-              <dt>Not yet</dt><dd>Plain-language explanations; accuracy against hand-checked answers is not measured (tested on 4 public sample reports from 3 labs)</dd>
+              <dt>Works</dt><dd>Files up to 50 GB in Chrome, Edge and Firefox; 25 of 25 real-use scenarios, including a server restart and Redis going down mid-transfer</dd>
+              <dt>Not yet</dt><dd>Resuming after a dropped connection; Safari, phones and two different networks are not tested; 7 known issues are listed in the repo</dd>
             </dl>
             <div class="sg-links">
-              <a class="sg-link" href="https://github.com/KrBeTect2025/lab-report-explainer" target="_blank" rel="noopener" aria-describedby="newTab">Source code<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
+              <a class="sg-link" href="https://github.com/KrBeTect2025/peer" target="_blank" rel="noopener" aria-describedby="newTab">Source code<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
             </div>
           </article>
 
