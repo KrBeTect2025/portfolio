@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Krish Rathore | Backend and ML developer</title>
-  <meta name="description" content="Portfolio of Krish Rathore: backend APIs with FastAPI, document parsing, and tested Python.">
+  <title>Krish Rathore | Backend developer</title>
+  <meta name="description" content="Portfolio of Krish Rathore: Python backends with FastAPI, Redis and WebRTC, tested in real browsers.">
   <meta name="theme-color" content="#0E0E0F">
   <!-- The page is dark by design, so tell browsers it already handles dark mode. That stops Chrome
        and Edge's forced dark mode from recolouring it, and makes scrollbars and form controls dark.
@@ -15,13 +15,13 @@
   <!-- What a link preview shows when this page is shared on LinkedIn, WhatsApp, Slack or X. -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://krbetect2025.github.io/portfolio/">
-  <meta property="og:title" content="Krish Rathore | Backend and ML developer">
-  <meta property="og:description" content="APIs that turn messy documents into data you can check. FastAPI, PDF parsing, tested Python.">
+  <meta property="og:title" content="Krish Rathore | Backend developer">
+  <meta property="og:description" content="Python backends, tested in real browsers until they hold. FastAPI, Redis, WebRTC.">
   <!-- og.png is the 1200x630 card image. Redraw it if your name or pitch changes. -->
   <meta property="og:image" content="https://krbetect2025.github.io/portfolio/og.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Krish Rathore, backend and ML developer: APIs that turn messy documents into data you can check. An ASCII sunset over orange cloud on a dark background.">
+  <meta property="og:image:alt" content="Krish Rathore, backend developer: Python backends, tested in real browsers until they hold. An ASCII sunset over orange cloud on a dark background.">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230E0E0F'/%3E%3Cpath d='M17 22l12 10-12 10' fill='none' stroke='%23F38020' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M33 44h15' stroke='%23F38020' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -64,11 +64,11 @@
       <section class="sg-hero">
         <div class="sg-art"><ascii-art piece="cloud-sea" label="Animated ASCII art: the sun setting into a sea of orange cloud"></ascii-art></div>
         <div class="sg-hero-in">
-          <p class="sg-label sg-role">Backend and ML developer</p>
+          <p class="sg-label sg-role">Backend developer</p>
           <!-- The real name is in .sg-sr for screen readers and search; the visible copy scrambles into place. -->
           <h1 class="sg-name"><span class="sg-sr">Krish Rathore</span><span class="sg-dec" id="nameText" aria-hidden="true">Krish Rathore</span></h1>
-          <p class="sg-pitch">I build Python APIs that turn messy PDFs into clean data you can check. My lab report parser passes 52 tests.</p>
-          <p class="sg-mono sg-now"><span class="sg-accent">now</span>&nbsp;&nbsp;adding plain-language explanations to lab-report-explainer</p>
+          <p class="sg-pitch">I build Python backends and test them until they hold. My file-sharing app sent a 50 GB file between two browsers, byte for byte, with the receiver using about 420 MB of memory.</p>
+          <p class="sg-mono sg-now"><span class="sg-accent">now</span>&nbsp;&nbsp;fixing the seven open issues in peer</p>
         </div>
       </section>
 
@@ -80,42 +80,35 @@
         </div>
         <div class="sg-bento">
           <article class="sg-card sg-card--lead">
-            <span class="sg-label">Python / FastAPI / PDF parsing</span>
-            <h3 class="sg-title-lg">lab-report-explainer</h3>
-            <p class="sg-desc-lg">Reads a lab report PDF, rebuilds the table of results from the position of each word on the page, and marks every result low, normal or high with plain code, not an AI guess. A FastAPI service handles upload, lets a person review uncertain rows, and deletes the result after 24 hours.</p>
-            <div class="sg-big"><span class="sg-big-n">52</span><span class="sg-label">tests passing</span></div>
+            <span class="sg-label">Python / FastAPI / WebRTC / Redis</span>
+            <h3 class="sg-title-lg">peer</h3>
+            <p class="sg-desc-lg">Sends a file of any size from one browser to another with a 6-digit code. A FastAPI and Redis server only introduces the two browsers; the file goes straight between them over an encrypted WebRTC channel and is written to disk as it arrives, so memory stays flat however big the file is.</p>
+            <div class="sg-big"><span class="sg-big-n">50&nbsp;GB</span><span class="sg-label">sent byte for byte, receiver memory about 420 MB</span></div>
             <ul class="sg-fixes" aria-label="Bugs fixed, each with a test">
-              <li><span class="sg-label">fix</span><span>A watermark leaking letters into numeric results</span></li>
-              <li><span class="sg-label">fix</span><span>A "Method" column merging into the reference range</span></li>
-              <li><span class="sg-label">fix</span><span>A symbol font being read as garbage characters</span></li>
+              <li><span class="sg-label">fix</span><span>Over the internet, a fast receiver got "no such code" because the code showed before the server had saved it</span></li>
+              <li><span class="sg-label">fix</span><span>Zipping a folder of 70,000 files overflowed the call stack</span></li>
+              <li><span class="sg-label">fix</span><span>Two receivers reading the same zip at once got a corrupt file</span></li>
             </ul>
             <dl class="sg-status">
-              <dt>Works</dt><dd>Extraction and low, normal or high flags</dd>
-              <dt>Not yet</dt><dd>Plain-language explanations; accuracy against hand-checked answers is not measured (tested on 4 public sample reports from 3 labs)</dd>
+              <dt>Works</dt><dd>Files up to 50 GB in Chrome, Edge and Firefox; 25 of 25 real-use scenarios, including a server restart and Redis going down mid-transfer</dd>
+              <dt>Not yet</dt><dd>Resuming after a dropped connection; Safari, phones and two different networks are not tested; 7 known issues are listed in the repo</dd>
             </dl>
             <div class="sg-links">
-              <a class="sg-link" href="https://github.com/KrBeTect2025/lab-report-explainer" target="_blank" rel="noopener" aria-describedby="newTab">Source code<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
+              <a class="sg-link" href="https://github.com/KrBeTect2025/peer" target="_blank" rel="noopener" aria-describedby="newTab">Source code<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
             </div>
           </article>
 
-          <article class="sg-card">
-            <div class="sg-row"><span class="sg-label">React / TS / Express</span><span class="sg-live">Live</span></div>
-            <h3 class="sg-title">RescueSync</h3>
-            <p class="sg-desc">Disaster-management dashboard: twelve pages of maps, charts and alerts in several languages, on a small Express API. Deployed front and back.</p>
-            <dl class="sg-status"><dt>Note</dt><dd>Demo only: no login, data stored in JSON files</dd></dl>
+          <article class="sg-card sg-card--tall">
+            <span class="sg-label">JavaScript / Canvas</span>
+            <h3 class="sg-title">inkboard</h3>
+            <p class="sg-desc">A whiteboard where handwriting with the mouse turns into text in Excalidraw's hand-drawn font, the same size and in the same place. A bar under each word offers other readings if it guessed wrong.</p>
+            <p class="sg-desc">The pen strokes go to Google's handwriting recognizer. It has no maths mode, so the app spots a written &Sigma; itself by comparing up to three strokes against templates. Plain JavaScript, no build step.</p>
+            <dl class="sg-status">
+              <dt>Works</dt><dd>Writing to text, drawing, arrows, select and resize, copy and paste, undo, PNG export</dd>
+              <dt>Not yet</dt><dd>Handwriting needs internet and is sent to Google; only tested in Chrome; no automated tests</dd>
+            </dl>
             <div class="sg-links">
-              <a class="sg-link" href="https://rescue-sync-delta.vercel.app" target="_blank" rel="noopener" aria-describedby="newTab">Live demo<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
-              <a class="sg-link" href="https://github.com/KrBeTect2025/RescueSync" target="_blank" rel="noopener" aria-describedby="newTab">Source<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
-            </div>
-          </article>
-
-          <article class="sg-card">
-            <span class="sg-label">FastAPI / SQLite / Redis</span>
-            <h3 class="sg-title">urlshort</h3>
-            <p class="sg-desc">URL shortener that turns each row id into a base-62 short code and checks Redis before SQLite, filling the cache on a miss.</p>
-            <dl class="sg-status"><dt>Note</dt><dd>Small learning project</dd></dl>
-            <div class="sg-links">
-              <a class="sg-link" href="https://github.com/KrBeTect2025/urlshort" target="_blank" rel="noopener" aria-describedby="newTab">Source<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
+              <a class="sg-link" href="https://github.com/KrBeTect2025/inkboard" target="_blank" rel="noopener" aria-describedby="newTab">Source<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
             </div>
           </article>
         </div>
@@ -129,36 +122,34 @@
         </div>
         <div class="sg-skills">
           <article class="sg-card">
-            <div class="sg-comp-head"><h3 class="sg-comp-title">Languages</h3><span class="sg-label sg-accent" aria-hidden="true">4</span></div>
+            <div class="sg-comp-head"><h3 class="sg-comp-title">Languages</h3><span class="sg-label sg-accent" aria-hidden="true">3</span></div>
             <ul class="sg-skill-list">
-              <li><span class="sg-skill">Python</span><span class="sg-used">lab-report-explainer, urlshort</span></li>
-              <li><span class="sg-skill">TypeScript</span><span class="sg-used">RescueSync</span></li>
-              <li><span class="sg-skill">JavaScript</span><span class="sg-used">this site</span></li>
-              <li><span class="sg-skill">SQL</span><span class="sg-used">urlshort</span></li>
+              <li><span class="sg-skill">Python</span><span class="sg-used">peer</span></li>
+              <li><span class="sg-skill">JavaScript</span><span class="sg-used">peer, inkboard, this site</span></li>
+              <li><span class="sg-skill">HTML and CSS</span><span class="sg-used">inkboard, this site</span></li>
             </ul>
           </article>
           <article class="sg-card">
-            <div class="sg-comp-head"><h3 class="sg-comp-title">Backend and data</h3><span class="sg-label sg-accent" aria-hidden="true">4</span></div>
+            <div class="sg-comp-head"><h3 class="sg-comp-title">Backend and data</h3><span class="sg-label sg-accent" aria-hidden="true">3</span></div>
             <ul class="sg-skill-list">
-              <li><span class="sg-skill">FastAPI</span><span class="sg-used">lab-report-explainer, urlshort</span></li>
-              <li><span class="sg-skill">Express</span><span class="sg-used">RescueSync</span></li>
-              <li><span class="sg-skill">SQLite</span><span class="sg-used">urlshort</span></li>
-              <li><span class="sg-skill">Redis</span><span class="sg-used">urlshort, as a cache in front of SQLite</span></li>
+              <li><span class="sg-skill">FastAPI</span><span class="sg-used">peer, signaling over WebSockets</span></li>
+              <li><span class="sg-skill">Redis</span><span class="sg-used">peer, codes that expire after an hour</span></li>
+              <li><span class="sg-skill">Docker</span><span class="sg-used">peer, the server, Redis and a public tunnel in one Compose file</span></li>
             </ul>
           </article>
           <article class="sg-card">
             <div class="sg-comp-head"><h3 class="sg-comp-title">Front end</h3><span class="sg-label sg-accent" aria-hidden="true">3</span></div>
             <ul class="sg-skill-list">
-              <li><span class="sg-skill">React</span><span class="sg-used">RescueSync</span></li>
-              <li><span class="sg-skill">HTML</span><span class="sg-used">this site</span></li>
-              <li><span class="sg-skill">CSS</span><span class="sg-used">this site, RescueSync</span></li>
+              <li><span class="sg-skill">WebRTC</span><span class="sg-used">peer, direct or relayed through TURN</span></li>
+              <li><span class="sg-skill">Service workers and streams</span><span class="sg-used">peer, a stream saved as a normal download</span></li>
+              <li><span class="sg-skill">Canvas</span><span class="sg-used">inkboard</span></li>
             </ul>
           </article>
           <article class="sg-card">
             <div class="sg-comp-head"><h3 class="sg-comp-title">Practice</h3><span class="sg-label sg-accent" aria-hidden="true">3</span></div>
             <ul class="sg-skill-list">
-              <li><span class="sg-skill">Testing</span><span class="sg-used">52 tests in lab-report-explainer</span></li>
-              <li><span class="sg-skill">PDF parsing</span><span class="sg-used">lab-report-explainer</span></li>
+              <li><span class="sg-skill">Testing</span><span class="sg-used">peer, Playwright in Chrome, Edge and Firefox</span></li>
+              <li><span class="sg-skill">Bug reports</span><span class="sg-used">peer, every open issue with a severity and a likely fix</span></li>
               <!-- script.js adds the contribution count from the GitHub data after "every project". -->
               <li><span class="sg-skill">Git and GitHub</span><span class="sg-used">every project<span id="skillGit"></span></span></li>
             </ul>
@@ -208,14 +199,14 @@
           <div>
             <span class="sg-label"><span class="sg-num">04</span> / Approach</span>
             <h2 class="sg-h2" id="approach-title">How I work</h2>
-            <p class="sg-about">I am interested in serving ML and LLM features through my own APIs, with code that checks every number before a person sees it.</p>
-            <p class="sg-aside sg-aside--first"><span class="sg-label">Lately</span>PDF parsing, FastAPI services and caching.</p>
-            <p class="sg-aside"><span class="sg-label">Toolkit</span>Python, FastAPI, SQL, SQLite, Redis, testing. TypeScript, React and Express for RescueSync.</p>
+            <p class="sg-about">I like the part of an app nobody sees until it breaks: the server, the edge cases, and the test that proves a fix holds.</p>
+            <p class="sg-aside sg-aside--first"><span class="sg-label">Lately</span>WebRTC, streaming large files to disk, and testing in real browsers.</p>
+            <p class="sg-aside"><span class="sg-label">Toolkit</span>Python, FastAPI, Redis, Docker and Playwright. JavaScript, WebRTC and Canvas in the browser.</p>
           </div>
           <ol class="sg-rules">
-            <li><span class="sg-mono sg-rule-n" aria-hidden="true">01</span><span>Every number is checked by plain code before a person sees it.</span></li>
+            <li><span class="sg-mono sg-rule-n" aria-hidden="true">01</span><span>Test on the real link, not only on my own machine. Some bugs only show up over the internet.</span></li>
             <li><span class="sg-mono sg-rule-n" aria-hidden="true">02</span><span>Every bug I fix gets a test that proves it stays fixed.</span></li>
-            <li><span class="sg-mono sg-rule-n" aria-hidden="true">03</span><span>Keep only what is needed. Uploads are deleted after reading, results after 24 hours.</span></li>
+            <li><span class="sg-mono sg-rule-n" aria-hidden="true">03</span><span>Write down what does not work yet, with how bad it is and how I would fix it.</span></li>
           </ol>
         </div>
       </section>
@@ -229,7 +220,7 @@
       <div class="sg-end-in">
         <span class="sg-label"><span class="sg-num">05</span> / Contact</span>
         <h2 class="sg-say" id="say"><span class="sg-sr">Say hi.</span><span class="sg-dec" id="sayText" aria-hidden="true">Say hi.</span></h2>
-        <p class="sg-end-text">If you have a messy document, an API that needs tests, or a role to fill, email me.</p>
+        <p class="sg-end-text">If you have a backend to build, an app that needs testing, or a role to fill, email me.</p>
         <!-- The copy button reads the address from the mailto link below, so that link is the
              only place to change it. -->
         <div class="sg-cta">

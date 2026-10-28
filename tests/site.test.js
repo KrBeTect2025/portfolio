@@ -112,7 +112,7 @@ function tipText(day) {
         icon: (document.querySelector('link[rel~="icon"]') || {}).href || "", lang: document.documentElement.lang,
       };
     });
-    assert(m.title === "Krish Rathore | Backend and ML developer", "title: " + m.title);
+    assert(m.title === "Krish Rathore | Backend developer", "title: " + m.title);
     assert(m.desc && m.desc.length > 50, "description");
     assert(m.theme === "#0E0E0F", "theme-color: " + m.theme);
     assert(m.canonical === "https://krbetect2025.github.io/portfolio/", "canonical: " + m.canonical);
