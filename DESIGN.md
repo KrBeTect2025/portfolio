@@ -49,7 +49,7 @@ Section labels are numbered like a route: `01 / Work`, `02 / Skills`, `03 / GitH
 
 - Side padding 48 px on desktop, 20 px on phones. Sections are 160 px apart (112 px on phones).
 - Radii: 16 px cards, 12 px focus areas, 8 px tooltips, 999 px buttons.
-- Work is a 3-column bento: the headline project spans 2 columns and 2 rows.
+- Work is a 3-column bento: the headline project spans 2 columns and 2 rows. With only two projects, the second card spans both rows of the third column (`.sg-card--tall`).
 - Skills is four equal compartments in a row (2 by 2 below 1100 px, stacked under 640 px).
 - GitHub and Approach are two-column splits (4:8 and 5:7) that stack below 1100 px and 900 px.
 - No shadows; the only exception is the soft ring around the "Live" dot. Depth comes from the two grounds and the scenes.
